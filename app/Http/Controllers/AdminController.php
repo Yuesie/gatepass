@@ -113,7 +113,7 @@ class AdminController extends Controller
     // ===================================================================
     // R - READ (Menampilkan Laporan Global)
     // ===================================================================
-    public function laporan(Request $request)
+   public function laporan(Request $request)
     {
         // Ambil Data Statistik Ringkasan
         $totalIzin = IzinMasuk::count();
@@ -122,7 +122,9 @@ class AdminController extends Controller
         $totalUsers = User::count();
 
         // Query Data Detail (Dikenakan Filter)
-        $izinsQuery = IzinMasuk::with('pembuat')->orderBy('tanggal', 'desc');
+        // *** PERBAIKAN DI SINI ***
+        $izinsQuery = IzinMasuk::with('pemohon', 'approverL1', 'approverL2', 'approverL3') // Muat semua relasi yang mungkin diakses di view
+            ->orderBy('tanggal', 'desc');
 
         // Filter: Rentang Tanggal
         if ($request->filled('start_date')) {

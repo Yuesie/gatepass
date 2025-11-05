@@ -2,62 +2,77 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\IzinMasukController;
-use App\Http\Controllers\AdminController; 
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\PenggunaController;
 use Illuminate\Support\Facades\Route;
 
-// Rute Halaman Utama
+// ===================================================================
+// RUTE HALAMAN UTAMA (TANPA LOGIN)
+// ===================================================================
 Route::get('/', function () {
     return view('welcome');
 });
 
 // ===================================================================
-// RUTE UMUM TER-AUTENTIKASI
+// RUTE UMUM (WAJIB LOGIN DAN VERIFIED EMAIL)
 // ===================================================================
 Route::middleware(['auth', 'verified'])->group(function () {
-    
-    // Rute Dashboard
+
+    // --- Dashboard ---
     Route::get('/dashboard', [IzinMasukController::class, 'dashboard'])->name('dashboard');
-    
-    // --- Rute Pengajuan Izin ---
+
+    // --- Pengajuan Izin ---
     Route::get('/izin/buat', [IzinMasukController::class, 'buat'])->name('izin.buat');
     Route::post('/izin/simpan', [IzinMasukController::class, 'simpan'])->name('izin.simpan');
-    
-    // --- Rute Persetujuan ---
+
+    // --- Persetujuan Izin ---
     Route::get('/persetujuan', [IzinMasukController::class, 'daftarPersetujuan'])->name('izin.persetujuan');
     Route::post('/izin/{izin}/proses-persetujuan', [IzinMasukController::class, 'prosesPersetujuan'])->name('izin.persetujuan.proses');
-    
-    // --- Rute Riwayat dan Detail ---
+
+    // --- Riwayat dan Detail Izin ---
     Route::get('/izin/riwayat', [IzinMasukController::class, 'riwayat'])->name('izin.riwayat');
     Route::get('/izin/detail/{izin}', [IzinMasukController::class, 'detail'])->name('izin.detail');
     Route::get('/izin/cetak/{izin}', [IzinMasukController::class, 'cetak'])->name('izin.cetak');
-    
-    // --- Rute Aksi Lainnya (Batal) ---
-    Route::post('/izin/batal/{izin}', [IzinMasukController::class, 'batal'])->name('izin.batal'); 
 
-    // --- Rute Profil User ---
+    // --- Pembatalan Izin ---
+    Route::post('/izin/batal/{izin}', [IzinMasukController::class, 'batal'])->name('izin.batal');
+
+    // --- Profil User ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 // ===================================================================
-// RUTE ADMINISTRASI (Khusus Admin)
+// RUTE ADMIN (KHUSUS ADMIN)
 // ===================================================================
-Route::middleware(['auth', 'role.check:admin']) // ⬅️ Menggunakan alias baru
-    ->prefix('admin')->name('admin.')->group(function () {
-    
-    // 1. Rute Kelola Pengguna (CRUD)
-    Route::get('/pengguna', [AdminController::class, 'pengguna'])->name('pengguna');
-    Route::get('/pengguna/buat', [AdminController::class, 'buatPengguna'])->name('pengguna.buat');
-    Route::post('/pengguna', [AdminController::class, 'storePengguna'])->name('pengguna.store'); 
-    Route::get('/pengguna/{id}/edit', [AdminController::class, 'editPengguna'])->name('pengguna.edit');
-    Route::put('/pengguna/{id}', [AdminController::class, 'updatePengguna'])->name('pengguna.update');
-    Route::delete('/pengguna/{id}', [AdminController::class, 'deletePengguna'])->name('pengguna.delete');
+Route::middleware(['auth', 'role.check:admin'])
+    ->prefix('admin')
+    ->as('admin.')
+    ->group(function () {
 
-    // 2. Rute Laporan Global
+    // =====================================================
+    // DASHBOARD ADMIN
+    // =====================================================
+    Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+
+    // =====================================================
+    // KELOLA PENGGUNA (CRUD AKUN)
+    // =====================================================
+    Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
+    Route::get('/pengguna/buat', [PenggunaController::class, 'create'])->name('pengguna.buat');
+    Route::post('/pengguna/simpan', [PenggunaController::class, 'store'])->name('pengguna.store');
+    Route::get('/pengguna/edit/{id}', [PenggunaController::class, 'edit'])->name('pengguna.edit');
+    Route::put('/pengguna/update/{id}', [PenggunaController::class, 'update'])->name('pengguna.update');
+    Route::delete('/pengguna/hapus/{id}', [PenggunaController::class, 'destroy'])->name('pengguna.delete');
+
+    // =====================================================
+    // LAPORAN
+    // =====================================================
     Route::get('/laporan', [AdminController::class, 'laporan'])->name('laporan');
 });
 
-
-// Rute Autentikasi Laravel Breeze (Login, Register, dll.)
-require __DIR__.'/auth.php';
+// ===================================================================
+// RUTE AUTENTIKASI (LOGIN, REGISTER, DLL)
+// ===================================================================
+require __DIR__ . '/auth.php';

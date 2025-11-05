@@ -11,16 +11,17 @@ class RoleCheck
     /**
      * Handle an incoming request.
      */
-    public function handle(Request $request, Closure $next, $role)
-    {
-        if (!Auth::check()) {
-            return redirect('/login');
-        }
-
-        if (Auth::user()->role !== $role) {
-            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
-        }
-
-        return $next($request);
+   public function handle(Request $request, Closure $next, ...$roles)
+{
+    if (!Auth::check()) {
+        return redirect('/login');
     }
+
+    if (!in_array(Auth::user()->peran, $roles)) {
+        abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+    }
+
+    return $next($request);
+}
+
 }

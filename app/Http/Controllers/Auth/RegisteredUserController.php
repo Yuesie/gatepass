@@ -11,67 +11,71 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
     /**
-     * Display the registration view.
+     * Tampilkan halaman register.
      */
     public function create(): View
     {
         return view('auth.register');
     }
-    // ... (method create) ...
 
     /**
-     * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
+     * Tangani pendaftaran pengguna baru.
      */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            // Input nama dihilangkan
             'email' => ['required', 'string', 'email', 'max:255', 'unique:' . User::class],
-            'jabatan_terpilih' => ['required', 'string', 'max:255'], // Input Jabatan dari dropdown
+            'jabatan_terpilih' => ['required', 'string', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
-        
-        // app/Http/Controllers/Auth/RegisteredUserController.php (di dalam method store)
-
-// ...
 
         $selectedJabatan = $request->jabatan_terpilih;
-        $peranDasar = 'pembuat_gatepass'; // Default
+        $peranDasar = 'pembuat_gatepass'; // Default (pemohon umum)
 
-        // Mapping Jabatan ke Peran Dasar
-        if (in_array($selectedJabatan, ['Spv II MPS', 'SPV II HSSE & FS', 'Sr Spv RSD', 'Spv I QQ', 'Spv I SSGA'])) {
-            $peranDasar = 'atasan_pemohon'; // Approver L1
+        // ===============================
+        // 🔹 Mapping Jabatan ke Peran Dasar
+        // ===============================
+        if (in_array($selectedJabatan, [
+            'Spv II MPS',
+            'SPV II HSSE & FS',
+            'Sr Spv RSD',
+            'Spv I QQ',
+            'Spv I SSGA'
+        ])) {
+            $peranDasar = 'atasan_pemohon'; // Approver Level 1
         } elseif ($selectedJabatan === 'Admin') {
             $peranDasar = 'admin'; // Admin
-        } elseif ($selectedJabatan === 'Security' || $selectedJabatan === 'Jr Assistant Security TNI/POLRI') {
-            // Memasukkan jabatan Security baru ke peran 'security' (Approver L2)
-            $peranDasar = 'security'; 
-        } elseif (in_array($selectedJabatan, ['IT Manager Banjarmasin', 'Pjs IT Manager Banjarmasin'])) {
-            // Memasukkan jabatan Manager/PJS ke peran 'manager' (Approver L3)
-            $peranDasar = 'manager';
+        } elseif (in_array($selectedJabatan, [
+            'Security',
+            'Jr Assistant Security TNI/POLRI'
+        ])) {
+            $peranDasar = 'security'; // Approver Level 2
+        } elseif (in_array($selectedJabatan, [
+            'IT Manager Banjarmasin',
+            'Pjs IT Manager Banjarmasin'
+        ])) {
+            $peranDasar = 'manager'; // Approver Level 3
+        } elseif ($selectedJabatan === 'Kontraktor') {
+            $peranDasar = 'kontraktor'; // 🔹 Tambahan untuk kontraktor
         }
 
-// ...
-        
+        // ===============================
+        // 🔹 Simpan ke Database
+        // ===============================
         $user = User::create([
-            'name' => 'User Baru - ' . $selectedJabatan, // Nama default
+            'name' => 'User Baru - ' . $selectedJabatan,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            
             'peran' => $peranDasar,
-            'jabatan_default' => $selectedJabatan, // Menyimpan jabatan detail
+            'jabatan_default' => $selectedJabatan,
         ]);
 
         event(new Registered($user));
-
         Auth::login($user);
 
         return redirect(RouteServiceProvider::HOME);

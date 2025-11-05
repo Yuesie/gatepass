@@ -237,80 +237,85 @@ class IzinMasukController extends Controller
      * 4. Halaman Dashboard (Perbaikan Logika Tugas Persetujuan)
      * ---------------------------- */
     public function dashboard()
-    {
-        $user = Auth::user();
-        $peran = $user->peran;
-        $userId = $user->id; 
-        $data = [
-            'total_izin_masuk' => 0,
-            'approval_count' => 0, 
-            'tugas_persetujuan_terbaru' => collect(), 
-            'latest_user_submissions' => collect(), 
-            'userPeran' => $peran, 
-            'pending_izins' => collect(), 
-            'riwayat_izin_count' => 0,
-        ];
+{
+    $user = Auth::user();
+    $peran = $user->peran;
+    $userId = $user->id;
 
-        // --- Logika untuk Dashboard Pembuat Gatepass ---
-        // ✅ REVISI: Ganti 'pemohon' menjadi 'pembuat_gatepass'
-        if ($peran == 'pembuat_gatepass') {
-            $statusDiproses = ['Menunggu L1', 'Menunggu L2', 'Menunggu L3']; 
-            
-            // Ganti semua where('id_pembuat', $userId) menjadi where(function...)
-            $data['pending_izins'] = IzinMasuk::where('id_pemohon', $userId) // Asumsi id_pemohon adalah pembuat gatepass
-                                         ->whereIn('status', $statusDiproses) 
-                                         ->orderBy('created_at', 'desc')
-                                         ->get();
-            
-            // Terapkan filter yang sama pada latest_user_submissions
-            $data['latest_user_submissions'] = IzinMasuk::where('id_pemohon', $userId) 
-                                                 ->where('status', 'Disetujui Final') 
-                                                 ->orderBy('created_at', 'desc')
-                                                 ->limit(5)
-                                                 ->get();
-            
-            // Terapkan filter yang sama pada total count
-            $data['riwayat_izin_count'] = IzinMasuk::where('id_pemohon', $userId)->count();
-        }
-        
-        // --- Logika untuk Dashboard Approver (L1, L2, L3, Teknik, HSSE) ---
-        elseif (in_array($peran, ['atasan_pemohon', 'security', 'manager', 'teknik', 'hsse'])) {
-            
-            $query = IzinMasuk::with('pembuat'); 
+    // Default data agar tidak error di view
+    $data = [
+        'userPeran' => $peran,
+        'total_izin_masuk' => 0,
+        'total_pengguna' => 0,
+        'approval_count' => 0,
+        'pending_izins' => collect(),
+        'latest_user_submissions' => collect(),
+        'riwayat_izin_count' => 0,
+        'tugas_persetujuan_terbaru' => collect(),
+    ];
 
-            $query->where(function($q) use ($userId) {
-                
-                // 1. Tugas L1: Gatepass status 'Menunggu L1' dan id_approver_l1 = user
-                $q->orWhere(function($subq) use ($userId) {
+    // ===================================================
+    // PEMBUAT GATEPASS (PEMOHON)
+    // ===================================================
+    if ($peran === 'pembuat_gatepass') {
+        $statusDiproses = ['Menunggu L1', 'Menunggu L2', 'Menunggu L3'];
+
+        // Kolom di tabel kamu pakai id_pembuat (bukan id_pemohon)
+        $data['pending_izins'] = IzinMasuk::where('id_pembuat', $userId)
+            ->whereIn('status', $statusDiproses)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $data['latest_user_submissions'] = IzinMasuk::where('id_pembuat', $userId)
+            ->where('status', 'Disetujui Final')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        $data['riwayat_izin_count'] = IzinMasuk::where('id_pembuat', $userId)
+            ->where('status', 'Disetujui Final')
+            ->count();
+    }
+
+    // ===================================================
+    // APPROVER (L1 / L2 / L3 / SECURITY / TEKNIK / HSSE)
+    // ===================================================
+    elseif (in_array($peran, ['atasan_pemohon', 'security', 'manager', 'teknik', 'hsse'])) {
+
+        $query = IzinMasuk::with('pemohon') // relasi dari model
+            ->where(function ($q) use ($userId) {
+                $q->orWhere(function ($subq) use ($userId) {
                     $subq->where('id_approver_l1', $userId)
-                         ->where('status', 'Menunggu L1'); // <-- KOREKSI STATUS
+                         ->where('status', 'Menunggu L1');
                 })
-                
-                // 2. Tugas L2: L1 sudah setuju, status 'Menunggu L2', dan id_approver_l2 = user
-                ->orWhere(function($subq) use ($userId) {
+                ->orWhere(function ($subq) use ($userId) {
                     $subq->where('id_approver_l2', $userId)
-                         ->where('status', 'Menunggu L2'); // <-- KOREKSI STATUS
+                         ->where('status', 'Menunggu L2');
                 })
-                
-                // 3. Tugas L3: L2 sudah setuju, status 'Menunggu L3', dan id_approver_l3 = user
-                ->orWhere(function($subq) use ($userId) {
+                ->orWhere(function ($subq) use ($userId) {
                     $subq->where('id_approver_l3', $userId)
-                         ->where('status', 'Menunggu L3'); // <-- KOREKSI STATUS
+                         ->where('status', 'Menunggu L3');
                 });
             });
 
-            $data['approval_count'] = $query->count();
-            $data['tugas_persetujuan_terbaru'] = (clone $query)->latest()->limit(5)->get();
-        }
-
-        // --- Logika untuk Dashboard Admin ---
-        elseif ($peran == 'admin') {
-            $data['total_izin_masuk'] = IzinMasuk::count();
-            $data['total_pengguna'] = User::count();
-        }
-
-        return view('dashboard', $data);
+        $data['approval_count'] = $query->count();
+        $data['tugas_persetujuan_terbaru'] = (clone $query)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
     }
+
+    // ===================================================
+    // ADMIN
+    // ===================================================
+    elseif ($peran === 'admin') {
+        $data['total_izin_masuk'] = IzinMasuk::count();
+        $data['total_pengguna'] = User::count();
+    }
+
+    return view('dashboard', $data);
+}
+
 
     /** ----------------------------
      * 5. Fungsi 'daftarPersetujuan' (Menampilkan daftar yang perlu disetujui)

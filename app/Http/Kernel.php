@@ -45,7 +45,7 @@ class Kernel extends HttpKernel
         // ALIAS CUSTOM DAN BAWAAN LARAVEL
         'auth' => \App\Http\Middleware\Authenticate::class,
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
-        'role.check' => \App\Http\Middleware\RoleCheck::class,
+        'role.check' => \App\Http\Middleware\RoleAccessCheck::class,
         // ALIAS BAWAAN LAINNYA
         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
         'can' => \Illuminate\Auth\Middleware\Authorize::class,
