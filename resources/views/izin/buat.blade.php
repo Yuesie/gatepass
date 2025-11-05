@@ -20,13 +20,21 @@
                         ];
                         $keteranganItemOptions = $perihalOptions; 
                         
-                        // FUNGSI PEMOHON DENGAN DAFTAR BARU
+                        // FUNGSI PEMOHON DENGAN DAFTAR BARU (Digunakan untuk Filtering ID Approver DB)
                         $fungsiOptions = ['MPS', 'HSSE & FS', 'RSD', 'QQ', 'SSGA']; 
 
-                        // JABATAN SPECIFIC UNTUK L2 & L3 (untuk dropdown)
+                        // JABATAN APPROVER L1 SPESIFIK (Untuk Tampilan Cetak/Form Input)
+                        $jabatanL1Options = [
+                            'Spv II MPS',
+                            'SPV II HSSE & FS',
+                            'Sr Spv RSD',
+                            'Spv I QQ',
+                            'Spv I SSGA',
+                        ];
+
+                        // JABATAN SPECIFIC UNTUK L2 & L3
                         $jabatanL2Options = [ 
                             'Jr Assistant Security',
-                             
                         ];
                         $jabatanL3Options = [
                             'IT Manager/PJS', 
@@ -58,7 +66,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('izin.simpan') }}" method="POST" id="izinForm" novalidate>
+                    <form action="{{ route('izin.simpan') }}" method="POST" id="izinForm">
                         @csrf
                         
                         {{-- ================================================= --}}
@@ -82,23 +90,23 @@
                                 <div class="mt-1 space-x-4">
                                     <label class="inline-flex items-center">
                                         <input type="radio" name="jenis_izin" value="masuk" {{ old('jenis_izin') == 'masuk' ? 'checked' : '' }} required
-                                                class="form-radio h-4 w-4 text-indigo-600 transition duration-150 ease-in-out">
+                                                 class="form-radio h-4 w-4 text-indigo-600 transition duration-150 ease-in-out">
                                         <span class="ml-2 text-sm text-gray-700">Izin Masuk</span>
                                     </label>
                                     <label class="inline-flex items-center">
                                         <input type="radio" name="jenis_izin" value="keluar" {{ old('jenis_izin') == 'keluar' ? 'checked' : '' }} required
-                                                class="form-radio h-4 w-4 text-indigo-600 transition duration-150 ease-in-out">
+                                                 class="form-radio h-4 w-4 text-indigo-600 transition duration-150 ease-in-out">
                                         <span class="ml-2 text-sm text-gray-700">Izin Keluar</span>
                                     </label>
                                 </div>
                                 @error('jenis_izin') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
 
-                            {{-- Fungsi Pemohon (DROPDOWN) - Kunci untuk Filtering L1 --}}
+                            {{-- Fungsi Pemohon (DROPDOWN) --}}
                             <div class="col-span-1">
                                 <label for="fungsi_pemohon" class="block text-sm font-medium text-gray-700">Fungsi Pemohon <span class="text-red-500">*</span></label>
                                 <select name="fungsi_pemohon" id="fungsi_pemohon" required
-                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('fungsi_pemohon') border-red-500 @enderror">
+                                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('fungsi_pemohon') border-red-500 @enderror">
                                     <option value="">-- Pilih Fungsi --</option>
                                     @foreach ($fungsiOptions as $fungsi)
                                         <option value="{{ $fungsi }}" {{ old('fungsi_pemohon') == $fungsi ? 'selected' : '' }}>
@@ -109,13 +117,15 @@
                                 @error('fungsi_pemohon') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
 
-                            {{-- Nomor Gatepass (Disabled) --}}
+                            {{-- NOMOR TELEPON PEMOHON (name="nomor_telepon_pemohon") --}}
                             <div class="col-span-1">
-                                <label for="nomor_izin" class="block text-sm font-medium text-gray-700">Nomor Gatepass</label>
-                                <input type="text" value="Akan dibuat saat pengajuan" disabled
-                                        class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm text-gray-500 text-sm">
+                                <label for="nomor_telepon_pemohon" class="block text-sm font-medium text-gray-700">Nomor Telepon Pemohon</label>
+                                <input type="text" name="nomor_telepon_pemohon" id="nomor_telepon_pemohon" 
+                                        value="{{ old('nomor_telepon_pemohon') }}"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nomor_telepon_pemohon') border-red-500 @enderror">
+                                @error('nomor_telepon_pemohon') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
-                            
+
                             {{-- Dasar Pekerjaan --}}
                             <div class="col-span-1">
                                 <label for="dasar_pekerjaan" class="block text-sm font-medium text-gray-700">Dasar Pekerjaan <span class="text-red-500">*</span></label>
@@ -128,7 +138,7 @@
                             <div class="col-span-1">
                                 <label for="perihal" class="block text-sm font-medium text-gray-700">Perihal <span class="text-red-500">*</span></label>
                                 <select name="perihal" id="perihal" required
-                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('perihal') border-red-500 @enderror">
+                                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('perihal') border-red-500 @enderror">
                                     <option value="">-- Pilih Perihal --</option>
                                     @foreach ($perihalOptions as $perihal)
                                         <option value="{{ $perihal }}" {{ old('perihal') == $perihal ? 'selected' : '' }}>
@@ -137,6 +147,13 @@
                                     @endforeach
                                 </select>
                                 @error('perihal') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            
+                            {{-- Nomor Gatepass (Disabled) --}}
+                            <div class="col-span-2">
+                                <label for="nomor_izin" class="block text-sm font-medium text-gray-700">Nomor Gatepass</label>
+                                <input type="text" value="Akan dibuat saat pengajuan" disabled
+                                        class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm text-gray-500 text-sm">
                             </div>
 
                         </div>
@@ -180,14 +197,6 @@
                                 @error('nomor_kendaraan') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
                             
-                            {{-- Keterangan Umum Barang --}}
-                            <div class="col-span-2">
-                                <label for="keterangan_umum" class="block text-sm font-medium text-gray-700">Keterangan Umum Barang</label>
-                                <textarea name="keterangan_umum" id="keterangan_umum" rows="2"
-                                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('keterangan_umum') border-red-500 @enderror">{{ old('keterangan_umum') }}</textarea>
-                                @error('keterangan_umum') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
-                            </div>
-
                         </div>
 
                         {{-- ================================================= --}}
@@ -203,26 +212,26 @@
                                 <label for="fungsi_pemohon_display" class="block text-sm font-medium text-gray-700">1. Fungsi Pemohon (dari Bagian 1) <span class="text-red-500">*</span></label>
                                 <input type="text" id="fungsi_pemohon_display" disabled class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed text-sm">
                                 
-                                {{-- 2. PILIH JABATAN L1 (DROPDOWN, TIDAK CASCADING KE NAMA) --}}
+                                {{-- 2. PILIH JABATAN L1 (DROPDOWN, DIPERBAIKI MENGGUNAKAN JABATAN SPESIFIK) --}}
                                 <label for="id_jabatan_l1" class="block text-sm font-medium text-gray-700 mt-2">Pilih Jabatan Atasan <span class="text-red-500">*</span></label>
                                 <select name="jabatan_approver_l1" id="id_jabatan_l1" required
-                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_approver_l1') border-red-500 @enderror">
+                                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_approver_l1') border-red-500 @enderror">
                                     <option value="">-- Pilih Jabatan --</option>
-                                    {{-- Menggunakan $fungsiOptions sebagai opsi jabatan L1 --}}
-                                    @foreach ($fungsiOptions as $fungsi)
-                                        <option value="{{ $fungsi }}" {{ old('jabatan_approver_l1') == $fungsi ? 'selected' : '' }}>
-                                            {{ $fungsi }}
+                                    @foreach ($jabatanL1Options as $jabatan)
+                                        <option value="{{ $jabatan }}" {{ old('jabatan_approver_l1') == $jabatan ? 'selected' : '' }}>
+                                            {{ $jabatan }}
                                         </option>
                                     @endforeach
                                 </select>
-                                <p id="l1-jabatan-info" class="text-xs text-red-500 mt-1" style="display: block;">Pilih Fungsi Pemohon di atas.</p>
+                                
+                                {{-- PESAN DINAMIS L1 INFO --}}
+                                <p id="l1-jabatan-info" class="text-xs text-red-500 mt-1">Pilih Fungsi Pemohon di atas.</p>
 
                                 {{-- 3. INPUT NAMA APPROVER L1 (TEKS MANUAL) --}}
                                 <label for="nama_approver_l1" class="block text-sm font-medium text-gray-700 mt-2">Input Nama Approver Atasan <span class="text-red-500">*</span></label>
                                 <input type="text" name="nama_approver_l1" id="nama_approver_l1" value="{{ old('nama_approver_l1') }}" required
                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nama_approver_l1') border-red-500 @enderror">
                                 
-                                {{-- Hapus p#l1-approver-info --}}
                                 @error('nama_approver_l1')
                                     <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
                                 @enderror
@@ -236,7 +245,7 @@
                                 {{-- 1. PILIH JABATAN SECURITY (DROPDOWN) --}}
                                 <label for="id_jabatan_l2" class="block text-sm font-medium text-gray-700">2. Pilih Jabatan Security <span class="text-red-500">*</span></label>
                                 <select name="jabatan_approver_l2" id="id_jabatan_l2" required
-                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_approver_l2') border-red-500 @enderror">
+                                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_approver_l2') border-red-500 @enderror">
                                     <option value="">-- Pilih Jabatan --</option>
                                     @foreach ($jabatanL2Options as $jabatan)
                                         <option value="{{ $jabatan }}" {{ old('jabatan_approver_l2') == $jabatan ? 'selected' : '' }}>
@@ -250,7 +259,6 @@
                                 <input type="text" name="nama_approver_l2" id="nama_approver_l2" value="{{ old('nama_approver_l2') }}" required
                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nama_approver_l2') border-red-500 @enderror">
 
-                                {{-- Hapus p#l2-approver-info --}}
                                 @error('nama_approver_l2')
                                     <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
                                 @enderror
@@ -264,7 +272,7 @@
                                 {{-- 1. PILIH JABATAN MANAGER/PJS (DROPDOWN) --}}
                                 <label for="id_jabatan_l3" class="block text-sm font-medium text-gray-700">3. Pilih Jabatan Manager/PJS <span class="text-red-500">*</span></label>
                                 <select name="jabatan_approver_l3" id="id_jabatan_l3" required
-                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_approver_l3') border-red-500 @enderror">
+                                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_approver_l3') border-red-500 @enderror">
                                     <option value="">-- Pilih Jabatan --</option>
                                     @foreach ($jabatanL3Options as $jabatan)
                                         <option value="{{ $jabatan }}" {{ old('jabatan_approver_l3') == $jabatan ? 'selected' : '' }}>
@@ -278,7 +286,6 @@
                                 <input type="text" name="nama_approver_l3" id="nama_approver_l3" value="{{ old('nama_approver_l3') }}" required
                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nama_approver_l3') border-red-500 @enderror">
 
-                                {{-- Hapus p#l3-approver-info --}}
                                 @error('nama_approver_l3')
                                     <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
                                 @enderror
@@ -361,7 +368,8 @@
                                 style="height: 150px; position: relative; z-index: 100;"></canvas>
                             
                             {{-- Input tersembunyi untuk data tanda tangan (Base64) --}}
-                            <input type="text" name="ttd_pemohon" id="ttd_pemohon_data" style="display: none;" required>
+                            <input type="hidden" name="ttd_pemohon" id="ttd_pemohon_data" 
+                                value="{{ old('ttd_pemohon') }}">
 
                             {{-- Preview setelah tanda tangan (opsional, membantu user yakin tandanya tersimpan) --}}
                             <div id="signaturePreviewContainer" class="mt-3 hidden">
@@ -398,11 +406,23 @@
                         // Selectors (Dipertahankan untuk Display)
                         const fungsiPemohonGlobalSelect = document.getElementById('fungsi_pemohon');
                         const fungsiPemohonDisplay = document.getElementById('fungsi_pemohon_display');
+                        const l1JabatanInfo = document.getElementById('l1-jabatan-info'); // <-- Selektor pesan info Bagian 3
                         
-                        // --- FUNGSI UTAMA UNTUK MENGISI DISPLAY L1 ---
+                        // --- FUNGSI UTAMA UNTUK MENGISI DISPLAY L1 & MENGATUR INFO ---
                         function updateL1Display() {
                             const selectedFungsi = fungsiPemohonGlobalSelect.value;
                             fungsiPemohonDisplay.value = selectedFungsi;
+                            
+                            // LOGIKA PERBAIKAN PESAN DINAMIS L1 INFO
+                            if (selectedFungsi && selectedFungsi !== '') {
+                                l1JabatanInfo.textContent = `Anda memilih fungsi: ${selectedFungsi}. Pilih jabatan atasan yang sesuai.`;
+                                l1JabatanInfo.classList.remove('text-red-500');
+                                l1JabatanInfo.classList.add('text-green-600'); 
+                            } else {
+                                l1JabatanInfo.textContent = 'Pilih Fungsi Pemohon di atas.';
+                                l1JabatanInfo.classList.remove('text-green-600');
+                                l1JabatanInfo.classList.add('text-red-500');
+                            }
                         }
 
                         // Panggil fungsi display saat DOMContentLoaded
@@ -411,14 +431,14 @@
                         // Event Listeners (Hanya untuk Display Fungsi L1)
                         fungsiPemohonGlobalSelect.addEventListener('change', updateL1Display); 
                         
-
+                        
                         // =================================================
                         // --- SCRIPT TANDA TANGAN DIGITAL (TTD) & BARANG DINAMIS ---
                         // =================================================
                         const canvas = document.getElementById('signatureCanvas');
                         const hiddenInput = document.getElementById('ttd_pemohon_data'); 
                         const clearButton = document.getElementById('clearSignatureBtn');
-                        const form = document.querySelector('form');
+                        const form = document.getElementById('izinForm'); // Mengambil form berdasarkan ID
                         const previewContainer = document.getElementById('signaturePreviewContainer');
                         const previewImage = document.getElementById('signaturePreview');
 
@@ -459,16 +479,20 @@
                         });
 
                         form.addEventListener('submit', function (e) {
-                            // ... (Logic TTD dan Form Submission tetap sama) ...
+                            
+                            // Ambil data TTD sebelum submit
                             if (!signaturePad.isEmpty()) {
                                 hiddenInput.value = signaturePad.toDataURL('image/png');
                             }
 
+                            // Cek jika Tanda Tangan Kosong (Validasi Klien)
                             if (hiddenInput.value === '' || hiddenInput.value.length < 100) { 
                                 alert("❌ Mohon tanda tangani formulir sebelum melanjutkan pengajuan.");
                                 e.preventDefault();
                                 return;
                             }
+                            
+                            // Note: Validasi input lain (required fields) akan ditangani oleh HTML5 atau Laravel
                         });
 
                         // --- LOGIKA DAFTAR BARANG DINAMIS ---
@@ -498,7 +522,8 @@
                         }
 
                         tambahBarangBtn.addEventListener('click', tambahBarangRow);
-                        checkMinRows();
+                        // Pertahankan satu baris awal saat dimuat
+                        checkMinRows(); 
 
                     });
                     </script>

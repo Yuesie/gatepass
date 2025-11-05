@@ -16,7 +16,7 @@ use Illuminate\View\View;
 class RegisteredUserController extends Controller
 {
     /**
-     * Tampilkan halaman register.
+     * Display the registration view.
      */
     public function create(): View
     {
@@ -24,60 +24,61 @@ class RegisteredUserController extends Controller
     }
 
     /**
-     * Tangani pendaftaran pengguna baru.
+     * Handle an incoming registration request.
+     *
+     * @throws \Illuminate\Validation\ValidationException
      */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:' . User::class],
-            'jabatan_terpilih' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
+            'jabatan_terpilih' => ['required', 'string', 'max:255'], // Menggunakan jabatan_terpilih dari form
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'jabatan_terpilih.required' => 'Jabatan / Peran wajib dipilih.',
         ]);
 
-        $selectedJabatan = $request->jabatan_terpilih;
-        $peranDasar = 'pembuat_gatepass'; // Default (pemohon umum)
+        // 1. PETA JABATAN KE PERAN (ROLE) SISTEM
+        $roleFinal = $this->mapJabatanToRole($request->jabatan_terpilih);
 
-        // ===============================
-        // 🔹 Mapping Jabatan ke Peran Dasar
-        // ===============================
-        if (in_array($selectedJabatan, [
-            'Spv II MPS',
-            'SPV II HSSE & FS',
-            'Sr Spv RSD',
-            'Spv I QQ',
-            'Spv I SSGA'
-        ])) {
-            $peranDasar = 'atasan_pemohon'; // Approver Level 1
-        } elseif ($selectedJabatan === 'Admin') {
-            $peranDasar = 'admin'; // Admin
-        } elseif (in_array($selectedJabatan, [
-            'Security',
-            'Jr Assistant Security TNI/POLRI'
-        ])) {
-            $peranDasar = 'security'; // Approver Level 2
-        } elseif (in_array($selectedJabatan, [
-            'IT Manager Banjarmasin',
-            'Pjs IT Manager Banjarmasin'
-        ])) {
-            $peranDasar = 'manager'; // Approver Level 3
-        } elseif ($selectedJabatan === 'Kontraktor') {
-            $peranDasar = 'kontraktor'; // 🔹 Tambahan untuk kontraktor
-        }
-
-        // ===============================
-        // 🔹 Simpan ke Database
-        // ===============================
+        // 2. BUAT PENGGUNA BARU DENGAN PERAN DAN JABATAN
         $user = User::create([
-            'name' => 'User Baru - ' . $selectedJabatan,
+            'name' => $request->jabatan_terpilih, // Menggunakan Jabatan sebagai Nama Tampilan sementara
             'email' => $request->email,
+            'peran' => $roleFinal, // Menggunakan Peran hasil mapping
+            'jabatan_default' => $request->jabatan_terpilih, // Menyimpan teks Jabatan di kolom ini
             'password' => Hash::make($request->password),
-            'peran' => $peranDasar,
-            'jabatan_default' => $selectedJabatan,
         ]);
 
         event(new Registered($user));
+
         Auth::login($user);
 
         return redirect(RouteServiceProvider::HOME);
+    }
+
+    /**
+     * Helper: Memetakan Jabatan yang dipilih pengguna ke Peran (Role) di sistem.
+     * Logika ini harus sinkron dengan AdminController dan IzinMasukController.
+     */
+    protected function mapJabatanToRole(string $jabatan): string
+    {
+        // Menentukan peran berdasarkan jabatan terpilih
+        return match ($jabatan) {
+            // Approver L1 (Atasan Pemohon)
+            'Spv II MPS', 'SPV II HSSE & FS', 'Sr Spv RSD', 'Spv I QQ', 'Spv I SSGA' => 'atasan_pemohon',
+            
+            // Approver L2 (Security)
+            'Jr Assistant Security TNI/POLRI' => 'security',
+            
+            // Approver L3 (Manager)
+            'IT Manager Banjarmasin', 'Pjs IT Manager Banjarmasin' => 'manager',
+            
+            // Administrasi / Pemohon Khusus
+            'Admin' => 'admin',
+            
+            // Default Role (Pemohon, termasuk Kontraktor)
+            default => 'pemohon',
+        };
     }
 }

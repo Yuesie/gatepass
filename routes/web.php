@@ -3,7 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\IzinMasukController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\Admin\PenggunaController;
+use App\Http\Middleware\RoleAccessCheck;
 use Illuminate\Support\Facades\Route;
 
 // ===================================================================
@@ -17,54 +17,53 @@ Route::get('/', function () {
 // RUTE UMUM (WAJIB LOGIN DAN VERIFIED EMAIL)
 // ===================================================================
 Route::middleware(['auth', 'verified'])->group(function () {
-
-    // --- Dashboard ---
+    
+    // Rute Aplikasi Utama (Dashboard, Izin, Persetujuan, Riwayat, Profil)
     Route::get('/dashboard', [IzinMasukController::class, 'dashboard'])->name('dashboard');
 
-    // --- Pengajuan Izin ---
     Route::get('/izin/buat', [IzinMasukController::class, 'buat'])->name('izin.buat');
     Route::post('/izin/simpan', [IzinMasukController::class, 'simpan'])->name('izin.simpan');
 
-    // --- Persetujuan Izin ---
     Route::get('/persetujuan', [IzinMasukController::class, 'daftarPersetujuan'])->name('izin.persetujuan');
     Route::post('/izin/{izin}/proses-persetujuan', [IzinMasukController::class, 'prosesPersetujuan'])->name('izin.persetujuan.proses');
 
-    // --- Riwayat dan Detail Izin ---
     Route::get('/izin/riwayat', [IzinMasukController::class, 'riwayat'])->name('izin.riwayat');
     Route::get('/izin/detail/{izin}', [IzinMasukController::class, 'detail'])->name('izin.detail');
     Route::get('/izin/cetak/{izin}', [IzinMasukController::class, 'cetak'])->name('izin.cetak');
-
-    // --- Pembatalan Izin ---
     Route::post('/izin/batal/{izin}', [IzinMasukController::class, 'batal'])->name('izin.batal');
 
-    // --- Profil User ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 // ===================================================================
-// RUTE ADMIN (KHUSUS ADMIN)
+// RUTE ADMIN (KHUSUS ADMIN) - SOLUSI FINAL BINDING
 // ===================================================================
-Route::middleware(['auth', 'role.check:admin'])
+Route::middleware(['auth', RoleAccessCheck::class . ':admin'])
     ->prefix('admin')
     ->as('admin.')
     ->group(function () {
 
-    // =====================================================
-    // DASHBOARD ADMIN
-    // =====================================================
+    // DASHBOARD ADMIN (Opsional, jika ada)
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
 
     // =====================================================
-    // KELOLA PENGGUNA (CRUD AKUN)
+    // KELOLA PENGGUNA (CRUD)
     // =====================================================
-    Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
-    Route::get('/pengguna/buat', [PenggunaController::class, 'create'])->name('pengguna.buat');
-    Route::post('/pengguna/simpan', [PenggunaController::class, 'store'])->name('pengguna.store');
-    Route::get('/pengguna/edit/{id}', [PenggunaController::class, 'edit'])->name('pengguna.edit');
-    Route::put('/pengguna/update/{id}', [PenggunaController::class, 'update'])->name('pengguna.update');
-    Route::delete('/pengguna/hapus/{id}', [PenggunaController::class, 'destroy'])->name('pengguna.delete');
+    // Index Pengguna
+    Route::get('/pengguna', [AdminController::class, 'pengguna'])->name('pengguna');
+    
+    // Create (Form dan Store)
+    Route::get('/pengguna/buat', [AdminController::class, 'buatPengguna'])->name('pengguna.buat');
+    Route::post('/pengguna', [AdminController::class, 'simpanPengguna'])->name('pengguna.store'); // <-- POST URL SIMPAN
+    
+    // Update (Form Edit dan Proses Update)
+    Route::get('/pengguna/{user}/edit', [AdminController::class, 'editPengguna'])->name('pengguna.edit');
+    Route::patch('/pengguna/{user}', [AdminController::class, 'updatePengguna'])->name('pengguna.update');
+    
+    // Delete
+    Route::delete('/pengguna/{user}', [AdminController::class, 'hapusPengguna'])->name('pengguna.delete');
 
     // =====================================================
     // LAPORAN

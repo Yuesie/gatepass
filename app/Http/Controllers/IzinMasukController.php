@@ -17,24 +17,22 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 
 
-
 class IzinMasukController extends Controller
 {
     /** ----------------------------
      * 1. Formulir Buat Gatepass
      * ---------------------------- */
-  public function buat()
-{
-    // Mengambil data Approver tidak lagi diperlukan di sini karena pemilihan Nama adalah input teks manual.
-    // Variabel list berikut dihapus karena tidak terpakai lagi di view yang baru.
-    
-    $approverL1 = collect([]); 
-    $approverL2 = collect([]);
-    $approverL3 = collect([]);
-    
-    // Mengirimkan variabel kosong ke view (hanya untuk mencegah error Blade jika ada sisa loop lama)
-    return view('izin.buat', compact('approverL1', 'approverL2', 'approverL3')); 
-}
+    public function buat()
+    {
+        // Mengambil data Approver tidak lagi diperlukan di sini karena pemilihan Nama adalah input teks manual.
+        
+        $approverL1 = collect([]); 
+        $approverL2 = collect([]);
+        $approverL3 = collect([]);
+        
+        // Mengirimkan variabel kosong ke view (hanya untuk mencegah error Blade jika ada sisa loop lama)
+        return view('izin.buat', compact('approverL1', 'approverL2', 'approverL3')); 
+    }
     /** ----------------------------
      * 2. Helper Generate Nomor Gatepass (Format Final)
      * ---------------------------- */
@@ -50,7 +48,7 @@ class IzinMasukController extends Controller
         return "{$nomorUrutPadded}/{$prefixPerusahaan}/{$tahun}";
     }
     
-   protected function checkGatepassStatus(IzinMasuk $izin): string
+    protected function checkGatepassStatus(IzinMasuk $izin): string
     {
         // Hitung total penolakan
         if ($izin->l1_rejected || $izin->l2_rejected || $izin->l3_rejected) {
@@ -77,7 +75,7 @@ class IzinMasukController extends Controller
     /** ----------------------------
      * 3. Fungsi 'simpan' (Menyimpan Pengajuan)
      * ---------------------------- */
-   public function simpan(Request $request)
+    public function simpan(Request $request)
     {
         // --- 0. ID APPROVER L2 & L3 GENERIK (Global/Sentral) ---
         // GANTI ID INI DENGAN ID AKUN GENERIK YANG SESUAI DI DATABASE ANDA!
@@ -85,56 +83,77 @@ class IzinMasukController extends Controller
         $ID_APPROVER_L3_GENERIK = 103; // Akun generik Manager/PJS (Role 'manager')
 
         // 1. VALIDASI DATA
-        $validated = $request->validate([
-            // Data Umum Izin
-            'tanggal' => 'required|date',
-            'jenis_izin' => 'required|in:masuk,keluar',
-            'fungsi_pemohon' => 'required|string|max:255',
-            'jabatan_fungsi_pemohon' => 'required|string|max:255',
-            'dasar_pekerjaan' => 'required|string|max:255',
-            'perihal' => 'required|string|max:255',
+        try {
+            $validated = $request->validate([
+                // Data Umum Izin
+                'tanggal' => 'required|date',
+                'jenis_izin' => 'required|in:masuk,keluar',
+                'fungsi_pemohon' => 'required|string|max:255',
+                
+                // Nomor Telepon Pemohon (Opsional)
+                'nomor_telepon_pemohon' => 'nullable|string|max:20',
+                
+                'dasar_pekerjaan' => 'required|string|max:255',
+                'perihal' => 'required|string|max:255',
 
-            // Data Pengiriman/Kendaraan
-            'nama_perusahaan' => 'required|string|max:255',
-            'tujuan_pengiriman' => 'required|string|max:255',
-            'pembawa_barang' => 'required|string|max:255',
-            'nomor_kendaraan' => 'nullable|string|max:255',
-            'keterangan_umum' => 'nullable|string',
-            
-            // TANDA TANGAN DIGITAL
-            'ttd_pemohon' => 'required|string', 
+                // Data Pengiriman/Kendaraan
+                'nama_perusahaan' => 'required|string|max:255',
+                'tujuan_pengiriman' => 'required|string|max:255',
+                'pembawa_barang' => 'required|string|max:255',
+                'nomor_kendaraan' => 'nullable|string|max:255',
+                // KETERANGAN UMUM DIHAPUS
 
-            // FIELD MANUAL APPROVER (DOKUMENTASI CETAK)
-            'jabatan_approver_l1' => 'required|string|max:100',
-            'nama_approver_l1' => 'required|string|max:100',
-            'jabatan_approver_l2' => 'required|string|max:100',
-            'nama_approver_l2' => 'required|string|max:100',
-            'jabatan_approver_l3' => 'required|string|max:100',
-            'nama_approver_l3' => 'required|string|max:100',
+                // TANDA TANGAN DIGITAL
+                'ttd_pemohon' => 'required|string', 
 
-            // Daftar Barang
-            'nama_item.*' => 'required|string|max:255',
-            'qty.*' => 'required|integer|min:1',
-            'satuan.*' => 'required|string|max:50',
-            'keterangan_item.*' => 'required|string|max:255',
-        ], [
-            'ttd_pemohon.required' => 'Data Tanda Tangan kosong. Mohon berikan tanda tangan.',
-            'jabatan_fungsi_pemohon.required' => 'Jabatan Fungsi Pemohon wajib diisi.',
-            // ... (Custom error messages lainnya) ...
-        ]);
+                // FIELD MANUAL APPROVER (DOKUMENTASI CETAK)
+                'jabatan_approver_l1' => 'required|string|max:100',
+                'nama_approver_l1' => 'required|string|max:100',
+                'jabatan_approver_l2' => 'required|string|max:100',
+                'nama_approver_l2' => 'required|string|max:100',
+                'jabatan_approver_l3' => 'required|string|max:100',
+                'nama_approver_l3' => 'required|string|max:100',
 
-        // --- 1a. MENENTUKAN ID APPROVER L1 SECARA DINAMIS BERDASARKAN FUNGSI ---
+                // Daftar Barang
+                'nama_item.*' => 'required|string|max:255',
+                'qty.*' => 'required|integer|min:1',
+                'satuan.*' => 'required|string|max:50',
+                'keterangan_item.*' => 'required|string|max:255',
+            ], [
+                'ttd_pemohon.required' => 'Data Tanda Tangan kosong. Mohon berikan tanda tangan.',
+            ]);
+        } catch (ValidationException $e) {
+             return redirect()->back()->withErrors($e->errors())->withInput();
+        }
+
+        // --- 1a. MENENTUKAN JABATAN APPROVER L1 LENGKAP DARI FUNGSI PEMOHON ---
         $fungsiPemohon = $validated['fungsi_pemohon'];
         
+        // Mapping Fungsi Pemohon ('SSGA') ke Jabatan Approver Lengkap ('Spv I SSGA')
+        $jabatanApproverL1Penuh = match ($fungsiPemohon) {
+            'MPS' => 'Spv II MPS',
+            'HSSE & FS' => 'SPV II HSSE & FS',
+            'RSD' => 'Sr Spv RSD',
+            'QQ' => 'Spv I QQ',
+            'SSGA' => 'Spv I SSGA',
+            default => null, // Jika fungsi tidak terdaftar
+        };
+        
+        if (is_null($jabatanApproverL1Penuh)) {
+            Log::error("Fungsi Pemohon tidak valid: " . $fungsiPemohon);
+            return redirect()->back()->withInput()->with('error', '❌ Fungsi Pemohon tidak valid atau tidak terdaftar untuk persetujuan L1.');
+        }
+
+        // --- 1b. MENCARI ID APPROVER L1 MENGGUNAKAN JABATAN LENGKAP ---
         $approverL1User = User::where('peran', 'atasan_pemohon')
-                              // Mencari user yang peran L1-nya sesuai dengan Fungsi Pemohon
-                              ->where('jabatan_default', $fungsiPemohon) 
-                              ->first();
+                             // KRITIS: Mencari berdasarkan jabatan_default LENGKAP!
+                             ->where('jabatan_default', $jabatanApproverL1Penuh) 
+                             ->first();
 
         // Cek apakah akun generik L1 ditemukan
         if (!$approverL1User) {
-            Log::error("Tidak ada akun Approver L1 generik terdaftar untuk Fungsi: " . $fungsiPemohon);
-            return redirect()->back()->withInput()->with('error', '❌ Akun persetujuan L1 untuk fungsi **' . $fungsiPemohon . '** tidak ditemukan di sistem. Hubungi administrator.');
+            Log::error("Tidak ada akun Approver L1 generik terdaftar untuk Jabatan: " . $jabatanApproverL1Penuh);
+            return redirect()->back()->withInput()->with('error', '❌ Akun persetujuan L1 generik untuk fungsi **' . $fungsiPemohon . '** (Jabatan: ' . $jabatanApproverL1Penuh . ') tidak ditemukan di sistem. Pastikan akun **' . $jabatanApproverL1Penuh . '** sudah diregister dengan Peran **atasan_pemohon**. Hubungi administrator.');
         }
         
         $ID_APPROVER_L1_FINAL = $approverL1User->id;
@@ -169,20 +188,27 @@ class IzinMasukController extends Controller
                 'tanggal' => $validated['tanggal'],
                 'jenis_izin' => $validated['jenis_izin'],
                 'fungsi_pemohon' => $validated['fungsi_pemohon'],
-                'jabatan_fungsi_pemohon' => $validated['jabatan_fungsi_pemohon'], 
+                
+                // Simpan Nomor Telepon (Input Opsional)
+                'nomor_telepon_pemohon' => $request->nomor_telepon_pemohon,
+                
+                // Simpan Jabatan Asli User untuk Dokumentasi
+                'jabatan_fungsi_pemohon' => Auth::user()->jabatan_default ?? $validated['fungsi_pemohon'], 
+                
                 'dasar_pekerjaan' => $validated['dasar_pekerjaan'],
                 'perihal' => $validated['perihal'],
                 'nama_perusahaan' => $validated['nama_perusahaan'],
                 'tujuan_pengiriman' => $validated['tujuan_pengiriman'],
                 'pembawa_barang' => $validated['pembawa_barang'],
                 'nomor_kendaraan' => $validated['nomor_kendaraan'],
-                'keterangan_umum' => $validated['keterangan_umum'],
+                // KETERANGAN UMUM DIHAPUS DARI INSERT
+                
                 'ttd_pemohon_path' => $ttd_path, 
                 'id_pemohon' => Auth::id(), 
                 'status' => 'Menunggu L1',
                 
                 // --- ID APPROVER (OTORISASI) ---
-                'id_approver_l1' => $ID_APPROVER_L1_FINAL,       // DINAMIS BERDASARKAN FUNGSI
+                'id_approver_l1' => $ID_APPROVER_L1_FINAL,      // DINAMIS BERDASARKAN FUNGSI
                 'id_approver_l2' => $ID_APPROVER_L2_GENERIK,     // HARDCODED GENERIK
                 'id_approver_l3' => $ID_APPROVER_L3_GENERIK,     // HARDCODED GENERIK
 
@@ -237,90 +263,90 @@ class IzinMasukController extends Controller
      * 4. Halaman Dashboard (Perbaikan Logika Tugas Persetujuan)
      * ---------------------------- */
     public function dashboard()
-{
-    $user = Auth::user();
-    $peran = $user->peran;
-    $userId = $user->id;
+    {
+        $user = Auth::user();
+        $peran = $user->peran;
+        $userId = $user->id;
 
-    // Default data agar tidak error di view
-    $data = [
-        'userPeran' => $peran,
-        'total_izin_masuk' => 0,
-        'total_pengguna' => 0,
-        'approval_count' => 0,
-        'pending_izins' => collect(),
-        'latest_user_submissions' => collect(),
-        'riwayat_izin_count' => 0,
-        'tugas_persetujuan_terbaru' => collect(),
-    ];
+        // Default data agar tidak error di view
+        $data = [
+            'userPeran' => $peran,
+            'total_izin_masuk' => 0,
+            'total_pengguna' => 0,
+            'approval_count' => 0,
+            'pending_izins' => collect(),
+            'latest_user_submissions' => collect(),
+            'riwayat_izin_count' => 0,
+            'tugas_persetujuan_terbaru' => collect(),
+        ];
 
-    // ===================================================
-    // PEMBUAT GATEPASS (PEMOHON)
-    // ===================================================
-    if ($peran === 'pembuat_gatepass') {
-        $statusDiproses = ['Menunggu L1', 'Menunggu L2', 'Menunggu L3'];
+        // ===================================================
+        // PEMBUAT GATEPASS (PEMOHON)
+        // ===================================================
+        if ($peran === 'pembuat_gatepass') {
+            $statusDiproses = ['Menunggu L1', 'Menunggu L2', 'Menunggu L3'];
 
-        // Kolom di tabel kamu pakai id_pembuat (bukan id_pemohon)
-        $data['pending_izins'] = IzinMasuk::where('id_pembuat', $userId)
-            ->whereIn('status', $statusDiproses)
-            ->orderBy('created_at', 'desc')
-            ->get();
+            // Kolom di tabel kamu pakai id_pembuat (bukan id_pemohon)
+            $data['pending_izins'] = IzinMasuk::where('id_pembuat', $userId)
+                ->whereIn('status', $statusDiproses)
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        $data['latest_user_submissions'] = IzinMasuk::where('id_pembuat', $userId)
-            ->where('status', 'Disetujui Final')
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+            $data['latest_user_submissions'] = IzinMasuk::where('id_pembuat', $userId)
+                ->where('status', 'Disetujui Final')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
 
-        $data['riwayat_izin_count'] = IzinMasuk::where('id_pembuat', $userId)
-            ->where('status', 'Disetujui Final')
-            ->count();
-    }
+            $data['riwayat_izin_count'] = IzinMasuk::where('id_pembuat', $userId)
+                ->where('status', 'Disetujui Final')
+                ->count();
+        }
 
-    // ===================================================
-    // APPROVER (L1 / L2 / L3 / SECURITY / TEKNIK / HSSE)
-    // ===================================================
-    elseif (in_array($peran, ['atasan_pemohon', 'security', 'manager', 'teknik', 'hsse'])) {
+        // ===================================================
+        // APPROVER (L1 / L2 / L3 / SECURITY / TEKNIK / HSSE)
+        // ===================================================
+        elseif (in_array($peran, ['atasan_pemohon', 'security', 'manager', 'teknik', 'hsse'])) {
 
-        $query = IzinMasuk::with('pemohon') // relasi dari model
-            ->where(function ($q) use ($userId) {
-                $q->orWhere(function ($subq) use ($userId) {
-                    $subq->where('id_approver_l1', $userId)
-                         ->where('status', 'Menunggu L1');
-                })
-                ->orWhere(function ($subq) use ($userId) {
-                    $subq->where('id_approver_l2', $userId)
-                         ->where('status', 'Menunggu L2');
-                })
-                ->orWhere(function ($subq) use ($userId) {
-                    $subq->where('id_approver_l3', $userId)
-                         ->where('status', 'Menunggu L3');
+            $query = IzinMasuk::with('pemohon') // relasi dari model
+                ->where(function ($q) use ($userId) {
+                    $q->orWhere(function ($subq) use ($userId) {
+                        $subq->where('id_approver_l1', $userId)
+                             ->where('status', 'Menunggu L1');
+                    })
+                    ->orWhere(function ($subq) use ($userId) {
+                        $subq->where('id_approver_l2', $userId)
+                             ->where('status', 'Menunggu L2');
+                    })
+                    ->orWhere(function ($subq) use ($userId) {
+                        $subq->where('id_approver_l3', $userId)
+                             ->where('status', 'Menunggu L3');
+                    });
                 });
-            });
 
-        $data['approval_count'] = $query->count();
-        $data['tugas_persetujuan_terbaru'] = (clone $query)
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+            $data['approval_count'] = $query->count();
+            $data['tugas_persetujuan_terbaru'] = (clone $query)
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+        }
+
+        // ===================================================
+        // ADMIN
+        // ===================================================
+        elseif ($peran === 'admin') {
+            $data['total_izin_masuk'] = IzinMasuk::count();
+            $data['total_pengguna'] = User::count();
+        }
+
+        return view('dashboard', $data);
     }
-
-    // ===================================================
-    // ADMIN
-    // ===================================================
-    elseif ($peran === 'admin') {
-        $data['total_izin_masuk'] = IzinMasuk::count();
-        $data['total_pengguna'] = User::count();
-    }
-
-    return view('dashboard', $data);
-}
 
 
     /** ----------------------------
      * 5. Fungsi 'daftarPersetujuan' (Menampilkan daftar yang perlu disetujui)
      * ---------------------------- */
-   public function daftarPersetujuan()
+    public function daftarPersetujuan()
     {
         $user = Auth::user();
         $userId = $user->id; 
@@ -359,62 +385,62 @@ class IzinMasukController extends Controller
     /** ----------------------------
      * 8. Fungsi 'show' (Detail Izin Masuk)
      * ---------------------------- */
-  public function detail($id)
-{
-    $izin = IzinMasuk::with([
-        'pemohon', 
-        'detailBarang', 
-        'approverL1', 
-        'approverL2', 
-        'approverL3', 
-    ])->findOrFail($id);
+    public function detail($id)
+    {
+        $izin = IzinMasuk::with([
+            'pemohon', 
+            'detailBarang', 
+            'approverL1', 
+            'approverL2', 
+            'approverL3', 
+        ])->findOrFail($id);
 
-    $userId = Auth::id();
-    $userPeran = Auth::user()->peran;
+        $userId = Auth::id();
+        $userPeran = Auth::user()->peran;
 
-    // KOREKSI UTAMA: Cek Kompatibilitas Pemilik Data (id_pemohon)
-    $isCreator = ($izin->id_pemohon === $userId);
-    
-    $isApprover = ($izin->id_approver_l1 === $userId) || 
-                  ($izin->id_approver_l2 === $userId) || 
-                  ($izin->id_approver_l3 === $userId);
-    
-    // Admin, Teknik, HSSE selalu boleh melihat
-    $isAdminOrNewRole = in_array($userPeran, ['admin', 'teknik', 'hsse']); 
-    
-    if ($isCreator || $isApprover || $isAdminOrNewRole) {
+        // KOREKSI UTAMA: Cek Kompatibilitas Pemilik Data (id_pemohon)
+        $isCreator = ($izin->id_pemohon === $userId);
         
-        $l1_status = $izin->tgl_persetujuan_l1 ? 'approved' : 'pending';
-        $l2_status = $izin->tgl_persetujuan_l2 ? 'approved' : 
-                      ($l1_status == 'approved' ? 'pending' : 'waiting'); 
-        $l3_status = $izin->tgl_persetujuan_l3 ? 'approved' : 
-                      ($l2_status == 'approved' ? 'pending' : 'waiting'); 
+        $isApprover = ($izin->id_approver_l1 === $userId) || 
+                      ($izin->id_approver_l2 === $userId) || 
+                      ($izin->id_approver_l3 === $userId);
         
-        // Tambahkan cek rejected
-        if (($izin->l1_rejected ?? false)) $l1_status = 'rejected';
-        if (($izin->l2_rejected ?? false)) $l2_status = 'rejected';
-        if (($izin->l3_rejected ?? false)) $l3_status = 'rejected';
+        // Admin, Teknik, HSSE selalu boleh melihat
+        $isAdminOrNewRole = in_array($userPeran, ['admin', 'teknik', 'hsse']); 
         
-        return view('izin.detail', compact('izin', 'l1_status', 'l2_status', 'l3_status'));
+        if ($isCreator || $isApprover || $isAdminOrNewRole) {
+            
+            $l1_status = $izin->tgl_persetujuan_l1 ? 'approved' : 'pending';
+            $l2_status = $izin->tgl_persetujuan_l2 ? 'approved' : 
+                          ($l1_status == 'approved' ? 'pending' : 'waiting'); 
+            $l3_status = $izin->tgl_persetujuan_l3 ? 'approved' : 
+                          ($l2_status == 'approved' ? 'pending' : 'waiting'); 
+            
+            // Tambahkan cek rejected
+            if (($izin->l1_rejected ?? false)) $l1_status = 'rejected';
+            if (($izin->l2_rejected ?? false)) $l2_status = 'rejected';
+            if (($izin->l3_rejected ?? false)) $l3_status = 'rejected';
+            
+            return view('izin.detail', compact('izin', 'l1_status', 'l2_status', 'l3_status'));
+        }
+
+        return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses untuk melihat detail Gatepass ini.');
     }
-
-    return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses untuk melihat detail Gatepass ini.');
-}
 
     /** ----------------------------
      * 9. Fungsi 'riwayat' (Riwayat Pengajuan Pemohon)
      * ---------------------------- */
- public function riwayat()
-{
-    $userId = Auth::id();
+    public function riwayat()
+    {
+        $userId = Auth::id();
 
-    // KOREKSI: Gunakan 'id_pemohon' untuk pengambilan riwayat
-    $riwayatIzin = IzinMasuk::where('id_pemohon', $userId)
-                             ->orderBy('created_at', 'desc')
-                             ->paginate(10); 
+        // KOREKSI: Gunakan 'id_pemohon' untuk pengambilan riwayat
+        $riwayatIzin = IzinMasuk::where('id_pemohon', $userId)
+                                 ->orderBy('created_at', 'desc')
+                                 ->paginate(10); 
 
-    return view('izin.riwayat', compact('riwayatIzin'));
-}
+        return view('izin.riwayat', compact('riwayatIzin'));
+    }
 
     /** ----------------------------
      * 10. Fungsi 'batal' (Membatalkan Pengajuan)

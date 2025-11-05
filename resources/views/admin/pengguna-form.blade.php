@@ -10,17 +10,15 @@
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
                     
-                    {{-- Tentukan URL Aksi Form (CREATE atau UPDATE) --}}
+                    {{-- Tentukan URL Aksi Form --}}
                     @if(isset($user))
-                        {{-- Jika $user ada (mode EDIT) --}}
                         <form method="POST" action="{{ route('admin.pengguna.update', $user->id) }}">
-                        @method('PUT') {{-- Metode HTTP untuk Update --}}
+                        @method('PATCH') 
                     @else
-                        {{-- Jika $user TIDAK ada (mode CREATE) --}}
                         <form method="POST" action="{{ route('admin.pengguna.store') }}">
                     @endif
                     
-                    @csrf {{-- Token Keamanan Laravel --}}
+                    @csrf
 
                     <h3 class="text-gray-900 text-xl font-bold mb-6">
                         Data Detail Pengguna
@@ -48,31 +46,38 @@
                         @enderror
                     </div>
 
-                    {{-- 3. Peran (Role) --}}
+                    {{-- 3. JABATAN (Menggantikan Peran/Role) --}}
                     <div class="mb-4">
-                        <label for="peran" class="block text-sm font-medium text-gray-700">Peran Pengguna (Role)</label>
-                        <select name="peran" id="peran" required
-                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('peran') border-red-500 @enderror">
+                        <label for="jabatan_terpilih" class="block text-sm font-medium text-gray-700">Jabatan / Posisi</label>
+                        <select name="jabatan_terpilih" id="jabatan_terpilih" required
+                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_terpilih') border-red-500 @enderror">
+                            
                             @php
-                                // KOREKSI FINAL: 7 role yang sesuai dengan migrasi dan AdminController.php
-                                $roles = ['admin', 'pemohon', 'atasan_pemohon', 'security', 'manager', 'teknik', 'hsse'];
-                                $currentRole = old('peran', $user->peran ?? '');
+                                // DAFTAR JABATAN: Sama dengan form register
+                                $jabatanList = [
+                                    'Spv II MPS', 
+                                    'SPV II HSSE & FS', 
+                                    'Sr Spv RSD', 
+                                    'Spv I QQ', 
+                                    'Spv I SSGA', 
+                                    'Admin', 
+                                    'Jr Assistant Security TNI/POLRI', 
+                                    'IT Manager Banjarmasin', 
+                                    'Pjs IT Manager Banjarmasin',
+                                    'Kontraktor'
+                                ];
+                                // Ambil jabatan dari kolom 'jabatan_default' atau 'jabatan_terpilih'
+                                $currentJabatan = old('jabatan_terpilih', $user->jabatan_default ?? '');
                             @endphp
 
-                            <option value="">-- Pilih Peran --</option>
-                            @foreach ($roles as $role)
-                                @php
-                                    $displayRole = ucfirst(str_replace('_', ' ', $role));
-                                    if ($role === 'manager') $displayRole = 'Manager (L3 Final)';
-                                    if ($role === 'atasan_pemohon') $displayRole = 'Atasan Pemohon (L1 Wajib)';
-                                @endphp
-                                
-                                <option value="{{ $role }}" {{ $currentRole == $role ? 'selected' : '' }}>
-                                    {{ $displayRole }}
+                            <option value="">-- Pilih Jabatan --</option>
+                            @foreach ($jabatanList as $jabatan)
+                                <option value="{{ $jabatan }}" {{ $currentJabatan == $jabatan ? 'selected' : '' }}>
+                                    {{ $jabatan }}
                                 </option>
                             @endforeach
                         </select>
-                        @error('peran')
+                        @error('jabatan_terpilih')
                             <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
