@@ -32,7 +32,7 @@ class IzinMasuk extends Model
     // Relasi ke User (pembuat gatepass)
     public function pemohon(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'id_pembuat');
+        return $this->belongsTo(User::class, 'id_pemohon');
     }
 
     // Relasi ke approver level 1–3

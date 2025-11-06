@@ -10,12 +10,13 @@
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
                     
-                    {{-- Tentukan URL Aksi Form --}}
+                    {{-- Tentukan URL Aksi Form (DITAMBAH: enctype="multipart/form-data") --}}
+                    {{-- Form ini SINKRON dengan AdminController yang memproses Jabatan Terpilih --}}
                     @if(isset($user))
-                        <form method="POST" action="{{ route('admin.pengguna.update', $user->id) }}">
+                        <form method="POST" action="{{ route('admin.pengguna.update', $user->id) }}" enctype="multipart/form-data">
                         @method('PATCH') 
                     @else
-                        <form method="POST" action="{{ route('admin.pengguna.store') }}">
+                        <form method="POST" action="{{ route('admin.pengguna.store') }}" enctype="multipart/form-data">
                     @endif
                     
                     @csrf
@@ -46,14 +47,14 @@
                         @enderror
                     </div>
 
-                    {{-- 3. JABATAN (Menggantikan Peran/Role) --}}
+                    {{-- 3. JABATAN / POSISI (Jabatan Terpilih: Digunakan Controller untuk menentukan ROLE) --}}
                     <div class="mb-4">
                         <label for="jabatan_terpilih" class="block text-sm font-medium text-gray-700">Jabatan / Posisi</label>
                         <select name="jabatan_terpilih" id="jabatan_terpilih" required
                                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_terpilih') border-red-500 @enderror">
                             
                             @php
-                                // DAFTAR JABATAN: Sama dengan form register
+                                // DAFTAR JABATAN dari AdminController->mapJabatanToRole
                                 $jabatanList = [
                                     'Spv II MPS', 
                                     'SPV II HSSE & FS', 
@@ -77,12 +78,42 @@
                                 </option>
                             @endforeach
                         </select>
+                        <p class="text-xs text-gray-500 mt-1">Jabatan ini akan menentukan peran ('role') pengguna.</p>
                         @error('jabatan_terpilih')
                             <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                     
-                    {{-- 4. Password (Opsional/Ganti Password) --}}
+                    <hr class="my-6 border-gray-200">
+                    
+                    {{-- 4. UPLOAD TANDA TANGAN (Opsional) --}}
+                    <div class="mb-6">
+                        <h4 class="text-gray-900 text-lg font-bold mb-3">Tanda Tangan Digital Approver (PNG)</h4>
+                        <label for="signature_path" class="block text-sm font-medium text-gray-700">Upload File Tanda Tangan (PNG Transparan)</label>
+                        <input type="file" name="signature_path" id="signature_path" accept="image/png"
+                                class="mt-1 block w-full text-sm text-gray-500
+                                       file:mr-4 file:py-2 file:px-4
+                                       file:rounded-full file:border-0
+                                       file:text-sm file:font-semibold
+                                       file:bg-indigo-50 file:text-indigo-700
+                                       hover:file:bg-indigo-100 
+                                       @error('signature_path') border-red-500 @enderror">
+                        <p class="text-xs text-gray-500 mt-1">Hanya menerima file PNG (latar belakang transparan) berukuran maksimum 2MB.</p>
+                        
+                        @if(isset($user) && $user->signature_path)
+                            <div class="mt-3 p-3 border rounded-lg bg-gray-50">
+                                <p class="text-sm text-gray-700 font-semibold mb-1">Tanda Tangan Tersimpan Saat Ini:</p>
+                                <img src="{{ asset('storage/' . $user->signature_path) }}" alt="Tanda Tangan" class="h-10 border p-1 bg-white">
+                                <p class="text-xs text-gray-500 mt-1">Path: **{{ $user->signature_path }}** (Kosongkan input di atas untuk mempertahankan TTD ini)</p>
+                            </div>
+                        @endif
+                        
+                        @error('signature_path')
+                            <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- 5. Password (Opsional/Ganti Password) --}}
                     <div class="mb-4">
                         <label for="password" class="block text-sm font-medium text-gray-700">
                             Kata Sandi ({{ isset($user) ? 'Kosongkan jika tidak ingin ganti' : 'Wajib diisi' }})
@@ -95,7 +126,7 @@
                         @enderror
                     </div>
                     
-                    {{-- 5. Konfirmasi Password --}}
+                    {{-- 6. Konfirmasi Password --}}
                     <div class="mb-6">
                         <label for="password_confirmation" class="block text-sm font-medium text-gray-700">
                             Konfirmasi Kata Sandi

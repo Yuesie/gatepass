@@ -14,7 +14,7 @@
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-6 border-b pb-4">
                         <h3 class="text-gray-900 text-2xl font-bold">Daftar Akun Pengguna</h3>
-                        <a href="{{ route('admin.pengguna.buat') }}" 
+                        <a href="{{ route('admin.pengguna.buat') }}"
                            class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition shadow">
                             + Tambah Pengguna Baru
                         </a>
@@ -48,16 +48,32 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {{ $user->email }}
                                             </td>
+                                            
+                                            {{-- KODE PERBAIKAN PERAN/ROLE BADGE (Defensif) --}}
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                    {{ 
-                                                        $user->peran == 'admin' ? 'bg-red-100 text-red-800' : 
-                                                        ($user->peran == 'security' ? 'bg-yellow-100 text-yellow-800' : 
-                                                        'bg-indigo-100 text-indigo-800') 
-                                                    }}">
-                                                    {{ ucfirst(str_replace('_', ' ', $user->peran)) }}
+                                                @php
+                                                    // Dapatkan peran dengan default 'pemohon' jika null/kosong
+                                                    $peran = strtolower($user->peran ?? 'pemohon');
+                                                    $cssClass = 'bg-indigo-100 text-indigo-800'; 
+                                                    
+                                                    if ($peran == 'admin') {
+                                                        $cssClass = 'bg-red-100 text-red-800';
+                                                    } elseif ($peran == 'security') {
+                                                        $cssClass = 'bg-yellow-100 text-yellow-800';
+                                                    } elseif ($peran == 'manager') {
+                                                        $cssClass = 'bg-green-100 text-green-800';
+                                                    } elseif ($peran == 'atasan_pemohon') {
+                                                        $cssClass = 'bg-purple-100 text-purple-800';
+                                                    } elseif ($peran == 'teknik' || $peran == 'hsse') {
+                                                        $cssClass = 'bg-blue-100 text-blue-800';
+                                                    }
+                                                @endphp
+
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $cssClass }}">
+                                                    {{ ucfirst(str_replace('_', ' ', $user->peran ?? 'N/A')) }}
                                                 </span>
                                             </td>
+
                                             <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                                 <a href="{{ route('admin.pengguna.edit', $user->id) }}" class="text-indigo-600 hover:text-indigo-900 mx-2">Edit</a>
                                                 
@@ -76,7 +92,7 @@
                         
                         {{-- Link Pagination --}}
                         <div class="mt-4 p-4 border-t">
-                            {{ $users->links() }}
+                            {{ $users->links() }} {{-- BARIS INI KRITIS --}}
                         </div>
                     @endif
                 </div>

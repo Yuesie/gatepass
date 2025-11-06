@@ -36,8 +36,10 @@
                         $jabatanL2Options = [ 
                             'Jr Assistant Security',
                         ];
+                        // 🛑 KOREKSI KRITIS: Gunakan string LENGKAP dari database users
                         $jabatanL3Options = [
-                            'IT Manager/PJS', 
+                            'IT Manager Banjarmasin', 
+                            'Pjs IT Manager Banjarmasin' 
                         ];
                         
                     @endphp
@@ -80,7 +82,7 @@
                             <div class="col-span-1">
                                 <label for="tanggal" class="block text-sm font-medium text-gray-700">Tanggal Izin <span class="text-red-500">*</span></label>
                                 <input type="date" name="tanggal" id="tanggal" value="{{ old('tanggal', date('Y-m-d')) }}" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tanggal') border-red-500 @enderror">
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tanggal') border-red-500 @enderror">
                                 @error('tanggal') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
                             
@@ -106,7 +108,7 @@
                             <div class="col-span-1">
                                 <label for="fungsi_pemohon" class="block text-sm font-medium text-gray-700">Fungsi Pemohon <span class="text-red-500">*</span></label>
                                 <select name="fungsi_pemohon" id="fungsi_pemohon" required
-                                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('fungsi_pemohon') border-red-500 @enderror">
+                                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('fungsi_pemohon') border-red-500 @enderror">
                                     <option value="">-- Pilih Fungsi --</option>
                                     @foreach ($fungsiOptions as $fungsi)
                                         <option value="{{ $fungsi }}" {{ old('fungsi_pemohon') == $fungsi ? 'selected' : '' }}>
@@ -117,28 +119,11 @@
                                 @error('fungsi_pemohon') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
 
-                            {{-- NOMOR TELEPON PEMOHON (name="nomor_telepon_pemohon") --}}
-                            <div class="col-span-1">
-                                <label for="nomor_telepon_pemohon" class="block text-sm font-medium text-gray-700">Nomor Telepon Pemohon</label>
-                                <input type="text" name="nomor_telepon_pemohon" id="nomor_telepon_pemohon" 
-                                        value="{{ old('nomor_telepon_pemohon') }}"
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nomor_telepon_pemohon') border-red-500 @enderror">
-                                @error('nomor_telepon_pemohon') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
-                            </div>
-
-                            {{-- Dasar Pekerjaan --}}
-                            <div class="col-span-1">
-                                <label for="dasar_pekerjaan" class="block text-sm font-medium text-gray-700">Dasar Pekerjaan <span class="text-red-500">*</span></label>
-                                <input type="text" name="dasar_pekerjaan" id="dasar_pekerjaan" value="{{ old('dasar_pekerjaan') }}" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('dasar_pekerjaan') border-red-500 @enderror">
-                                @error('dasar_pekerjaan') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
-                            </div>
-
                             {{-- Perihal (Dropdown) --}}
                             <div class="col-span-1">
                                 <label for="perihal" class="block text-sm font-medium text-gray-700">Perihal <span class="text-red-500">*</span></label>
                                 <select name="perihal" id="perihal" required
-                                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('perihal') border-red-500 @enderror">
+                                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('perihal') border-red-500 @enderror">
                                     <option value="">-- Pilih Perihal --</option>
                                     @foreach ($perihalOptions as $perihal)
                                         <option value="{{ $perihal }}" {{ old('perihal') == $perihal ? 'selected' : '' }}>
@@ -148,12 +133,29 @@
                                 </select>
                                 @error('perihal') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
+
+                            {{-- NOMOR TELEPON PEMOHON (name="nomor_telepon_pemohon") --}}
+                            <div class="col-span-1">
+                                <label for="nomor_telepon_pemohon" class="block text-sm font-medium text-gray-700">Nomor Telepon Pemohon</label>
+                                <input type="text" name="nomor_telepon_pemohon" id="nomor_telepon_pemohon" 
+                                         value="{{ old('nomor_telepon_pemohon') }}"
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nomor_telepon_pemohon') border-red-500 @enderror">
+                                @error('nomor_telepon_pemohon') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+                            </div>
+
+                            {{-- Dasar Pekerjaan --}}
+                            <div class="col-span-1">
+                                <label for="dasar_pekerjaan" class="block text-sm font-medium text-gray-700">Dasar Pekerjaan <span class="text-red-500">*</span></label>
+                                <input type="text" name="dasar_pekerjaan" id="dasar_pekerjaan" value="{{ old('dasar_pekerjaan') }}" required
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('dasar_pekerjaan') border-red-500 @enderror">
+                                @error('dasar_pekerjaan') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+                            </div>
                             
                             {{-- Nomor Gatepass (Disabled) --}}
                             <div class="col-span-2">
                                 <label for="nomor_izin" class="block text-sm font-medium text-gray-700">Nomor Gatepass</label>
                                 <input type="text" value="Akan dibuat saat pengajuan" disabled
-                                        class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm text-gray-500 text-sm">
+                                         class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm text-gray-500 text-sm">
                             </div>
 
                         </div>
@@ -169,7 +171,7 @@
                             <div class="col-span-1">
                                 <label for="nama_perusahaan" class="block text-sm font-medium text-gray-700">Nama Perusahaan <span class="text-red-500">*</span></label>
                                 <input type="text" name="nama_perusahaan" id="nama_perusahaan" value="{{ old('nama_perusahaan') }}" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nama_perusahaan') border-red-500 @enderror">
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nama_perusahaan') border-red-500 @enderror">
                                 @error('nama_perusahaan') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
                             
@@ -177,7 +179,7 @@
                             <div class="col-span-1">
                                 <label for="tujuan_pengiriman" class="block text-sm font-medium text-gray-700">Tujuan Pengiriman <span class="text-red-500">*</span></label>
                                 <input type="text" name="tujuan_pengiriman" id="tujuan_pengiriman" value="{{ old('tujuan_pengiriman') }}" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tujuan_pengiriman') border-red-500 @enderror">
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('tujuan_pengiriman') border-red-500 @enderror">
                                 @error('tujuan_pengiriman') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
 
@@ -185,15 +187,15 @@
                             <div class="col-span-1">
                                 <label for="pembawa_barang" class="block text-sm font-medium text-gray-700">Nama Pembawa Barang / Driver <span class="text-red-500">*</span></label>
                                 <input type="text" name="pembawa_barang" id="pembawa_barang" value="{{ old('pembawa_barang') }}" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('pembawa_barang') border-red-500 @enderror">
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('pembawa_barang') border-red-500 @enderror">
                                 @error('pembawa_barang') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
                             
                             {{-- Nomor Kendaraan (OPSIONAL) --}}
                             <div class="col-span-1">
-                                <label for="nomor_kendaraan" class="block text-sm font-medium text-gray-700">Nomor Kendaraan / Polisi</label>
+                                <label for="nomor_kendaraan" class="block text-sm font-medium text-gray-700">Nomor Polisi</label>
                                 <input type="text" name="nomor_kendaraan" id="nomor_kendaraan" value="{{ old('nomor_kendaraan') }}" 
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nomor_kendaraan') border-red-500 @enderror">
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nomor_kendaraan') border-red-500 @enderror">
                                 @error('nomor_kendaraan') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
                             
@@ -215,7 +217,7 @@
                                 {{-- 2. PILIH JABATAN L1 (DROPDOWN, DIPERBAIKI MENGGUNAKAN JABATAN SPESIFIK) --}}
                                 <label for="id_jabatan_l1" class="block text-sm font-medium text-gray-700 mt-2">Pilih Jabatan Atasan <span class="text-red-500">*</span></label>
                                 <select name="jabatan_approver_l1" id="id_jabatan_l1" required
-                                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_approver_l1') border-red-500 @enderror">
+                                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_approver_l1') border-red-500 @enderror">
                                     <option value="">-- Pilih Jabatan --</option>
                                     @foreach ($jabatanL1Options as $jabatan)
                                         <option value="{{ $jabatan }}" {{ old('jabatan_approver_l1') == $jabatan ? 'selected' : '' }}>
@@ -230,7 +232,7 @@
                                 {{-- 3. INPUT NAMA APPROVER L1 (TEKS MANUAL) --}}
                                 <label for="nama_approver_l1" class="block text-sm font-medium text-gray-700 mt-2">Input Nama Approver Atasan <span class="text-red-500">*</span></label>
                                 <input type="text" name="nama_approver_l1" id="nama_approver_l1" value="{{ old('nama_approver_l1') }}" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nama_approver_l1') border-red-500 @enderror">
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nama_approver_l1') border-red-500 @enderror">
                                 
                                 @error('nama_approver_l1')
                                     <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
@@ -245,7 +247,7 @@
                                 {{-- 1. PILIH JABATAN SECURITY (DROPDOWN) --}}
                                 <label for="id_jabatan_l2" class="block text-sm font-medium text-gray-700">2. Pilih Jabatan Security <span class="text-red-500">*</span></label>
                                 <select name="jabatan_approver_l2" id="id_jabatan_l2" required
-                                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_approver_l2') border-red-500 @enderror">
+                                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_approver_l2') border-red-500 @enderror">
                                     <option value="">-- Pilih Jabatan --</option>
                                     @foreach ($jabatanL2Options as $jabatan)
                                         <option value="{{ $jabatan }}" {{ old('jabatan_approver_l2') == $jabatan ? 'selected' : '' }}>
@@ -257,7 +259,7 @@
                                 {{-- 2. INPUT NAMA APPROVER SECURITY (TEKS MANUAL) --}}
                                 <label for="nama_approver_l2" class="block text-sm font-medium text-gray-700 mt-2">Input Nama Approver Security <span class="text-red-500">*</span></label>
                                 <input type="text" name="nama_approver_l2" id="nama_approver_l2" value="{{ old('nama_approver_l2') }}" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nama_approver_l2') border-red-500 @enderror">
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nama_approver_l2') border-red-500 @enderror">
 
                                 @error('nama_approver_l2')
                                     <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
@@ -272,7 +274,7 @@
                                 {{-- 1. PILIH JABATAN MANAGER/PJS (DROPDOWN) --}}
                                 <label for="id_jabatan_l3" class="block text-sm font-medium text-gray-700">3. Pilih Jabatan Manager/PJS <span class="text-red-500">*</span></label>
                                 <select name="jabatan_approver_l3" id="id_jabatan_l3" required
-                                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_approver_l3') border-red-500 @enderror">
+                                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('jabatan_approver_l3') border-red-500 @enderror">
                                     <option value="">-- Pilih Jabatan --</option>
                                     @foreach ($jabatanL3Options as $jabatan)
                                         <option value="{{ $jabatan }}" {{ old('jabatan_approver_l3') == $jabatan ? 'selected' : '' }}>
@@ -284,7 +286,7 @@
                                 {{-- 2. INPUT NAMA APPROVER MANAGER (TEKS MANUAL) --}}
                                 <label for="nama_approver_l3" class="block text-sm font-medium text-gray-700 mt-2">Input Nama Approver Manager <span class="text-red-500">*</span></label>
                                 <input type="text" name="nama_approver_l3" id="nama_approver_l3" value="{{ old('nama_approver_l3') }}" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nama_approver_l3') border-red-500 @enderror">
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('nama_approver_l3') border-red-500 @enderror">
 
                                 @error('nama_approver_l3')
                                     <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
@@ -306,7 +308,7 @@
                         </div>
 
                         <button type="button" id="tambah-barang-btn"
-                                class="mt-4 px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition">
+                                 class="mt-4 px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition">
                             + Tambah Item Barang
                         </button>
                         
@@ -318,32 +320,32 @@
                                 <div class="flex-1 w-full">
                                     <label class="block text-sm font-medium text-gray-700">Nama Item / Material <span class="text-red-500">*</span></label>
                                     <input type="text" name="nama_item[]" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
                                 
                                 {{-- Qty --}}
                                 <div class="w-full md:w-20">
                                     <label class="block text-sm font-medium text-gray-700">Qty <span class="text-red-500">*</span></label>
                                     <input type="number" name="qty[]" min="1" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
                                 
                                 {{-- Satuan --}}
                                 <div class="w-full md:w-24">
                                     <label class="block text-sm font-medium text-gray-700">Satuan <span class="text-red-500">*</span></label>
                                     <input type="text" name="satuan[]" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
                                 
                                 {{-- Keterangan Item --}}
                                 <div class="flex-1 w-full">
                                     <label class="block text-sm font-medium text-gray-700">Keterangan Item <span class="text-red-500">*</span></label>
                                     <select name="keterangan_item[]" required
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                        <option value="">-- Pilih Keterangan --</option>
-                                        @foreach ($keteranganItemOptions as $keterangan)
-                                            <option value="{{ $keterangan }}">{{ $keterangan }}</option>
-                                        @endforeach
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            <option value="">-- Pilih Keterangan --</option>
+                                            @foreach ($keteranganItemOptions as $keterangan)
+                                                <option value="{{ $keterangan }}">{{ $keterangan }}</option>
+                                            @endforeach
                                     </select>
                                 </div>
                                 

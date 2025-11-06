@@ -9,14 +9,14 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 
-                {{-- DEFINISIKAN VARIABEL $userPeran DI SINI --}}
                 @php
-                    // Kode ini mengatasi error syntax "unexpected token ' '"
+                    // Ambil peran dari data yang dilempar controller
                     $userPeran = $userPeran ?? Auth::user()->peran;
+                    $userName = Auth::user()->name;
                 @endphp
 
                 <p class="text-gray-900 text-xl font-bold mb-6">
-                    Selamat datang, {{ Auth::user()->name }}! 👋
+                    Selamat datang, {{ $userName }}! 👋
                 </p>
 
                 {{-- AREA UNTUK FLASH MESSAGE (Success/Error) --}}
@@ -33,14 +33,14 @@
 
 
                 {{-- ================================================= --}}
-                {{-- BLOK 1 & 2: PEMBUAT GATEPASS / PEMOHON (Peran: pembuat_gatepass) --}}
+                {{-- BLOK 1 & 2: PEMBUAT GATEPASS / PEMOHON (Peran: pembuat_gatepass atau pemohon) --}}
                 {{-- ================================================= --}}
-                @if($userPeran === 'pembuat_gatepass')
+                @if($userPeran === 'pemohon' || $userPeran === 'pembuat_gatepass')
                     <div class="mb-8 p-6 bg-blue-50 border-l-4 border-blue-500 rounded-lg shadow-md">
                         <h3 class="text-xl font-bold text-blue-700 mb-3">Gatepass Anda Sedang Diproses ⏳</h3>
                         
                         @if($pending_izins->isEmpty())
-                            <p class="text-gray-600 italic">Tidak ada pengajuan Gatepass yang sedang menunggu persetujuan (Menunggu).</p>
+                            <p class="text-gray-600 italic">Tidak ada pengajuan Gatepass yang sedang menunggu persetujuan.</p>
                             <a href="{{ route('izin.buat') }}" class="mt-3 inline-block px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition text-sm">
                                 Buat Gatepass Baru
                             </a>
@@ -193,7 +193,7 @@
                                             <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-yellow-600">
                                                 {{ $izin->nomor_izin ?? 'Menunggu Nomor' }}
                                             </td>
-                                            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ $izin->pembuat->name ?? 'N/A' }}</td>
+                                            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ $izin->pemohon->name ?? 'N/A' }}</td>
                                             <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{{ Str::limit($izin->perihal, 30) }}</td>
                                             <td class="px-3 py-2 whitespace-nowrap text-sm font-medium">
                                                 <a href="{{ route('izin.detail', $izin->id) }}" class="text-yellow-600 hover:text-yellow-900">Tinjau</a>

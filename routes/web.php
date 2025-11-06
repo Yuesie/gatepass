@@ -38,32 +38,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // ===================================================================
-// RUTE ADMIN (KHUSUS ADMIN) - SOLUSI FINAL BINDING
+// RUTE ADMIN (KHUSUS ADMIN) - KODE PERBAIKAN FINAL
 // ===================================================================
 Route::middleware(['auth', RoleAccessCheck::class . ':admin'])
     ->prefix('admin')
     ->as('admin.')
     ->group(function () {
 
-    // DASHBOARD ADMIN (Opsional, jika ada)
-    Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+    // DASHBOARD ADMIN (Opsional)
+    Route::get('/', [AdminController::class, 'index'])->name('dashboard'); // Memanggil index()
 
     // =====================================================
-    // KELOLA PENGGUNA (CRUD)
+    // KELOLA PENGGUNA (CRUD) - SEMUA SUDAH SESUAI CONTROLLER
     // =====================================================
-    // Index Pengguna
-    Route::get('/pengguna', [AdminController::class, 'pengguna'])->name('pengguna');
+    // Index Pengguna (Daftar) -> Memanggil index()
+    Route::get('/pengguna', [AdminController::class, 'index'])->name('pengguna');
     
-    // Create (Form dan Store)
-    Route::get('/pengguna/buat', [AdminController::class, 'buatPengguna'])->name('pengguna.buat');
-    Route::post('/pengguna', [AdminController::class, 'simpanPengguna'])->name('pengguna.store'); // <-- POST URL SIMPAN
+    // Create (Form) -> Memanggil create()
+    Route::get('/pengguna/buat', [AdminController::class, 'create'])->name('pengguna.buat');
     
-    // Update (Form Edit dan Proses Update)
-    Route::get('/pengguna/{user}/edit', [AdminController::class, 'editPengguna'])->name('pengguna.edit');
-    Route::patch('/pengguna/{user}', [AdminController::class, 'updatePengguna'])->name('pengguna.update');
+    // Store (Simpan) -> Memanggil store()
+    Route::post('/pengguna', [AdminController::class, 'store'])->name('pengguna.store'); 
     
-    // Delete
-    Route::delete('/pengguna/{user}', [AdminController::class, 'hapusPengguna'])->name('pengguna.delete');
+    // Update (Form Edit) -> Memanggil edit()
+    Route::get('/pengguna/{user}/edit', [AdminController::class, 'edit'])->name('pengguna.edit');
+    
+    // Update (Proses Update) -> Memanggil update()
+    Route::patch('/pengguna/{user}', [AdminController::class, 'update'])->name('pengguna.update');
+    
+    // Delete (Hapus) -> Memanggil delete()
+    Route::delete('/pengguna/{user}', [AdminController::class, 'destroy'])->name('pengguna.delete');
 
     // =====================================================
     // LAPORAN

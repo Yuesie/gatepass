@@ -116,12 +116,6 @@
                         </div>
                     </div>
                 </div>
-
-                {{-- Keterangan Barang --}}
-                <div class="col-span-1 md:col-span-2 mt-4 border-t pt-4">
-                    <h4 class="font-bold text-gray-700 mb-2">Keterangan Umum Barang</h4>
-                    <p class="text-gray-900 italic">{{ $izin->keterangan_umum ?? 'Tidak ada keterangan umum.' }}</p>
-                </div>
                 
                 @if($izin->dokumen_pendukung)
                 <div class="col-span-1 md:col-span-2 mt-4 border-t pt-4">
@@ -174,90 +168,42 @@
             <div class="mt-8 border-t pt-6">
                 <h3 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Alur Persetujuan</h3>
 
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    
-                    {{-- Pemohon --}}
-                    <div class="p-4 border rounded-lg bg-indigo-50 border-indigo-300">
-                        <p class="font-bold text-sm mb-2">Diajukan Oleh (Pemohon)</p>
-                        {{-- REVISI: HANYA MENAMPILKAN NAMA PEMBAWA BARANG --}}
-                        <p class="font-semibold text-indigo-700">{{ $izin->pembawa_barang ?? 'N/A' }}</p>
-                        <p class="text-xs text-gray-600">Tanggal: {{ \Carbon\Carbon::parse($izin->created_at)->format('d M Y, H:i') }}</p>
-                    </div>
-                    
-                    {{-- L1 (Atasan Pemohon) --}}
-                    <div class="p-4 border rounded-lg 
-                        @if($l1_status == 'approved') bg-green-50 border-green-300
-                        @elseif($l1_status == 'rejected') bg-red-50 border-red-300
-                        @else bg-gray-50 border-gray-300
-                        @endif
-                    ">
-                        <p class="font-bold text-sm mb-2">Persetujuan Level 1 (Atasan Pemohon)</p>
-                        @if ($izin->id_approver_l1)
-                            @if ($l1_status == 'approved')
-                                <p class="text-green-700 font-semibold">{{ $izin->approverL1->name ?? 'N/A' }}</p>
-                                <p class="text-xs text-green-600 mt-1">Disetujui: {{ \Carbon\Carbon::parse($izin->tgl_persetujuan_l1)->format('d M Y, H:i') }}</p>
-                            @elseif($l1_status == 'rejected')
-                                <p class="text-red-700 font-semibold">{{ $izin->approverL1->name ?? 'N/A' }}</p>
-                                <p class="text-xs text-red-600 mt-1">Status: **DITOLAK**</p>
-                            @else
-                                <p class="text-gray-500 italic">Menunggu Persetujuan</p>
-                                <p class="text-xs text-gray-600 mt-1">Approver: {{ $izin->approverL1->name ?? 'N/A' }}</p>
-                            @endif
-                        @else
-                            <p class="text-gray-500 italic">Tidak ada approver L1 yang ditunjuk.</p>
-                        @endif
-                    </div>
+               <div class="grid grid-cols-3 gap-6 mt-8">
+    
+    <div class="p-4 border rounded-lg bg-yellow-100 border-yellow-500">
+        <p class="font-semibold text-sm">Persetujuan Level 1 (Atasan Pemohon)</p>
+        <hr class="my-1 border-gray-300">
+        
+        <p class="text-sm text-gray-700">Nama: <strong>{{ $izin->nama_approver_l1 ?? 'N/A' }}</strong></p> 
+        
+        <p class="mt-2 text-xs text-gray-600">
+            Approver Digital: {{ $izin->approverL1->name ?? 'Belum Ditunjuk' }}
+        </p>
+    </div>
 
-                    {{-- L2 (Security) --}}
-                    <div class="p-4 border rounded-lg 
-                        @if($l2_status == 'approved') bg-green-50 border-green-300
-                        @elseif($l2_status == 'rejected') bg-red-50 border-red-300
-                        @else bg-gray-50 border-gray-300
-                        @endif
-                    ">
-                        <p class="font-bold text-sm mb-2">Persetujuan Level 2 (Security)</p>
-                        @if ($izin->id_approver_l2)
-                            @if ($l2_status == 'approved')
-                                <p class="text-green-700 font-semibold">{{ $izin->approverL2->name ?? 'N/A' }}</p>
-                                <p class="text-xs text-green-600 mt-1">Disetujui: {{ \Carbon\Carbon::parse($izin->tgl_persetujuan_l2)->format('d M Y, H:i') }}</p>
-                            @elseif($l2_status == 'rejected')
-                                <p class="text-red-700 font-semibold">{{ $izin->approverL2->name ?? 'N/A' }}</p>
-                                <p class="text-xs text-red-600 mt-1">Status: **DITOLAK**</p>
-                            @else
-                                <p class="text-gray-500 italic">Menunggu Persetujuan</p>
-                                <p class="text-xs text-gray-600 mt-1">Approver: {{ $izin->approverL2->name ?? 'N/A' }}</p>
-                            @endif
-                        @else
-                            <p class="text-gray-500 italic">Tidak ada approver L2 yang ditunjuk.</p>
-                        @endif
-                    </div>
+    <div class="p-4 border rounded-lg bg-yellow-100 border-yellow-500">
+        <p class="font-semibold text-sm">Persetujuan Level 2 (Security)</p>
+        <hr class="my-1 border-gray-300">
+        
+        <p class="text-sm text-gray-700">Nama: <strong>{{ $izin->nama_approver_l2 ?? 'N/A' }}</strong></p> 
 
-                    {{-- L3 (Manajemen / Final) --}}
-                    <div class="p-4 border rounded-lg 
-                        @if($l3_status == 'approved') bg-green-50 border-green-300
-                        @elseif($l3_status == 'rejected') bg-red-50 border-red-300
-                        @else bg-gray-50 border-gray-300
-                        @endif
-                    ">
-                        <p class="font-bold text-sm mb-2">Persetujuan Level 3 (Manajemen / Final)</p>
-                        @if ($izin->id_approver_l3)
-                            @if ($l3_status == 'approved')
-                                <p class="text-green-700 font-semibold">{{ $izin->approverL3->name ?? 'N/A' }}</p>
-                                <p class="text-xs text-green-600 mt-1">Disetujui Final: {{ \Carbon\Carbon::parse($izin->tgl_persetujuan_l3)->format('d M Y, H:i') }}</p>
-                            @elseif($l3_status == 'rejected')
-                                <p class="text-red-700 font-semibold">{{ $izin->approverL3->name ?? 'N/A' }}</p>
-                                <p class="text-xs text-red-600 mt-1">Status: **DITOLAK / DIBATALKAN**</p>
-                            @else
-                                <p class="text-gray-500 italic">Menunggu Persetujuan</p>
-                                <p class="text-xs text-gray-600 mt-1">Approver: {{ $izin->approverL3->name ?? 'N/A' }}</p>
-                            @endif
-                        @else
-                            <p class="text-gray-500 italic">Tidak ada approver L3 yang ditunjuk.</p>
-                        @endif
-                    </div>
+        <p class="mt-2 text-xs text-gray-600">
+            Approver Digital: {{ $izin->approverL2->name ?? 'Belum Ditunjuk' }}
+        </p>
+    </div>
 
-                </div>
-            </div>
+    <div class="p-4 border rounded-lg bg-yellow-100 border-yellow-500">
+        <p class="font-semibold text-sm">Persetujuan Level 3 (Manajemen / Final)</p>
+        <hr class="my-1 border-gray-300">
+        
+        <p class="text-sm text-gray-700">Nama: <strong>{{ $izin->nama_approver_l3 ?? 'N/A' }}</strong></p> 
+        
+        
+        <p class="mt-2 text-xs text-gray-600">
+            Approver Digital: {{ $izin->approverL3->name ?? 'Belum Ditunjuk' }}
+        </p>
+    </div>
+</div>
             
             {{-- Verifikasi Tanda Tangan --}}
             <div class="mt-8 border-t pt-6">
@@ -286,7 +232,7 @@
                         @elseif($izin->l1_rejected)
                             <p class="text-sm text-red-700 font-bold">DITOLAK</p>
                         @else
-                            <p class="text-sm text-yellow-600">Menunggu TTD L1.</p>
+                            <p class="text-sm text-yellow-600">Menunggu TTD.</p>
                         @endif
                     </div>
 
@@ -299,7 +245,7 @@
                         @elseif($izin->l2_rejected)
                             <p class="text-sm text-red-700 font-bold">DITOLAK</p>
                         @else
-                            <p class="text-sm text-yellow-600">Menunggu TTD L2.</p>
+                            <p class="text-sm text-yellow-600">Menunggu TTD.</p>
                         @endif
                     </div>
 
@@ -312,7 +258,7 @@
                         @elseif($izin->l3_rejected)
                             <p class="text-sm text-red-700 font-bold">DITOLAK</p>
                         @else
-                            <p class="text-sm text-yellow-600">Menunggu TTD L3.</p>
+                            <p class="text-sm text-yellow-600">Menunggu TTD.</p>
                         @endif
                     </div>
                 </div>

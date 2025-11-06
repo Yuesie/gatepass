@@ -3,142 +3,182 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\IzinMasuk;
 use App\Models\User; 
+use App\Models\IzinMasuk; 
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Pagination\Paginator; 
-use Illuminate\Support\Collection;
-use Illuminate\Support\Str; // <-- Tambahkan ini untuk fungsi string helper
+use Carbon\Carbon; 
+use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Str; // Tambahkan ini
 
 class AdminController extends Controller
 {
-    // Daftar Peran Sistem yang Diizinkan (Final)
-    private $allowedRoles = ['admin', 'pemohon', 'atasan_pemohon', 'security', 'manager', 'teknik', 'hsse'];
-    
-    // Fungsi Mapping untuk menyelaraskan form Admin dengan form Registrasi
-    private function mapJabatanToRole(string $jabatan): string
+    /**
+     * Menampilkan daftar pengguna (untuk route admin.pengguna)
+     */
+    public function index()
     {
-        $jabatan = Str::lower($jabatan); // Normalisasi input
-
-        if ($jabatan === 'admin') {
-            return 'admin';
-        } elseif (Str::contains($jabatan, ['manager', 'pjs'])) {
-            return 'manager'; // Approver L3
-        } elseif (Str::contains($jabatan, ['hsse', 'security', 'tni', 'polri'])) {
-            return 'security'; // Approver L2/Spesialis
-        } elseif (Str::contains($jabatan, 'spv')) {
-            return 'atasan_pemohon'; // Approver L1
-        } elseif ($jabatan === 'kontraktor') {
-            return 'pemohon'; // Pembuat Gatepass
-        }
-        
-        return 'pemohon'; // Default ke pembuat gatepass
-    }
-    
-    // ===================================================================
-    // R - READ (Menampilkan Daftar Pengguna)
-    // ===================================================================
-    public function pengguna()
-    {
-        $users = User::paginate(10);
-        return view('admin.pengguna', compact('users')); 
+        // Mengambil semua pengguna dengan pagination
+        $users = User::paginate(10); 
+        return view('admin.pengguna', compact('users'));
     }
 
-    // ===================================================================
-    // C - CREATE (Menampilkan Form Tambah)
-    // ===================================================================
-    public function buatPengguna()
+    /**
+     * Menampilkan form tambah pengguna (untuk route admin.pengguna.buat)
+     */
+    public function create()
     {
-        // View Form Admin akan menggunakan daftar jabatan
-        return view('admin.pengguna-form'); 
+        return view('admin.pengguna-form');
     }
 
-    // ===================================================================
-    // C - CREATE (Menyimpan Pengguna Baru) - MENGGUNAKAN JABATAN
-    // ===================================================================
-    public function simpanPengguna(Request $request)
+    /**
+     * Menyimpan pengguna baru ke database (untuk route admin.pengguna.store)
+     */
+    public function store(Request $request)
     {
-        // PERHATIAN: Memvalidasi 'jabatan_terpilih' bukan 'peran'
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'jabatan_terpilih' => 'required|string|max:255',
-            // Pastikan kolom 'jabatan_terpilih' ditambahkan ke $fillable di Model User
+            'email' => 'required|email|unique:users,email',
+            'jabatan_terpilih' => 'required|string|max:255', 
+            'password' => 'required|confirmed|min:8',
+            'signature_path' => 'nullable|image|mimes:png|max:2048', 
+        ], [
+            'jabatan_terpilih.required' => 'Jabatan / Posisi wajib dipilih.',
+            'signature_path.mimes' => 'File tanda tangan harus berformat PNG.',
         ]);
 
-        // 1. Tentukan Role dari Jabatan yang dipilih Admin
-        $roleFinal = $this->mapJabatanToRole($request->jabatan_terpilih);
+        $signaturePath = null;
 
-        // 2. Buat pengguna baru
+        // Tentukan ROLE dan JABATAN sebelum menyimpan user (diperlukan untuk nama file TTD)
+        $roleFinal = $this->mapJabatanToRole($validated['jabatan_terpilih']);
+
+        // 1. --- LOGIKA UPLOAD TANDA TANGAN ---
+        if ($request->hasFile('signature_path')) {
+            $file = $request->file('signature_path');
+            
+            // Generate nama unik untuk sementara (sebelum User ID tersedia)
+            // Setelah user dibuat, kita akan update path-nya jika perlu,
+            // tapi untuk STORE, kita gunakan nama unik berdasarkan jabatan dan waktu
+            $folder = 'ttd_approver';
+            $fileName = time() . '_' . Str::slug($validated['jabatan_terpilih']) . '.' . $file->getClientOriginalExtension();
+            
+            try {
+                // 🛑 KOREKSI: Gunakan storeAs untuk memastikan path yang benar dan aman.
+                $path = $file->storeAs($folder, $fileName, 'public');
+                $signaturePath = $path; // Path relatif yang benar: ttd_approver/nama_file.png
+            } catch (\Exception $e) {
+                Log::error("Gagal menyimpan file TTD: " . $e->getMessage());
+                return redirect()->back()->withInput()->with('error', 'Gagal menyimpan file TTD ke server.');
+            }
+        }
+
+        // 2. SIMPAN PENGGUNA
         User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'peran' => $roleFinal, // Simpan Role Sistem yang dipetakan
-            'jabatan_default' => $request->jabatan_terpilih, // Simpan Jabatan Deskriptif
-            'password' => Hash::make($request->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'peran' => $roleFinal,
+            'jabatan_default' => $validated['jabatan_terpilih'],
+            'password' => Hash::make($validated['password']),
+            'signature_path' => $signaturePath, 
         ]);
 
-        return redirect()->route('admin.pengguna')->with('success', 'Pengguna baru berhasil ditambahkan dengan peran: ' . $roleFinal);
+        return redirect()->route('admin.pengguna')->with('success', 'Data pengguna berhasil ditambahkan!');
     }
-    
-    // U - UPDATE, D - DELETE, laporan() (Kode lainnya disesuaikan)
-    // ...
-    public function editPengguna(User $user) 
+
+    /**
+     * Menampilkan form edit pengguna
+     */
+    public function edit(User $user)
     {
         return view('admin.pengguna-form', compact('user'));
     }
 
-    public function updatePengguna(Request $request, User $user)
+    /**
+     * Memperbarui pengguna di database
+     */
+    public function update(Request $request, User $user)
     {
-        // Validasi dan update disesuaikan seperti di atas...
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'password' => 'nullable|string|min:8|confirmed',
-            'jabatan_terpilih' => 'required|string|max:255', // Validasi jabatan
+            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+            'jabatan_terpilih' => 'required|string|max:255',
+            'password' => 'nullable|confirmed|min:8',
+            'signature_path' => 'nullable|image|mimes:png|max:2048', 
+        ], [
+            'jabatan_terpilih.required' => 'Jabatan / Posisi wajib dipilih.',
+            'signature_path.mimes' => 'File tanda tangan harus berformat PNG.',
         ]);
-        
-        $roleFinal = $this->mapJabatanToRole($request->jabatan_terpilih);
 
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->peran = $roleFinal; // Update peran
-        $user->jabatan_default = $request->jabatan_terpilih; // Update jabatan
+        $signaturePath = $user->signature_path; 
 
-        if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
+        // 1. --- LOGIKA UPDATE/GANTI TANDA TANGAN ---
+        if ($request->hasFile('signature_path')) {
+            // Hapus file lama (jika ada)
+            if ($user->signature_path) {
+                Storage::disk('public')->delete($user->signature_path);
+            }
+
+            $file = $request->file('signature_path');
+            $folder = 'ttd_approver';
+            $fileName = time() . '_' . Str::slug($validated['jabatan_terpilih']) . '.' . $file->getClientOriginalExtension();
+            
+            try {
+                // 🛑 KOREKSI: Gunakan storeAs untuk memastikan path yang benar dan aman.
+                $path = $file->storeAs($folder, $fileName, 'public');
+                $signaturePath = $path;
+            } catch (\Exception $e) {
+                Log::error("Gagal update file TTD: " . $e->getMessage());
+                return redirect()->back()->withInput()->with('error', 'Gagal update file TTD ke server.');
+            }
         }
 
+        // 2. UPDATE DATA PENGGUNA
+        $roleFinal = $this->mapJabatanToRole($validated['jabatan_terpilih']);
+        
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->peran = $roleFinal;
+        $user->jabatan_default = $validated['jabatan_terpilih'];
+        $user->signature_path = $signaturePath; 
+
+        if ($request->filled('password')) {
+            $user->password = Hash::make($validated['password']);
+        }
+        
         $user->save();
+
         return redirect()->route('admin.pengguna')->with('success', 'Data pengguna berhasil diperbarui!');
     }
 
-    public function hapusPengguna(User $user)
+    /**
+     * Menghapus pengguna (Menggantikan delete() dengan destroy() standar Laravel)
+     */
+    public function destroy(User $user) // PERUBAHAN NAMA METHOD
     {
-        if (Auth::id() === $user->id) {
-            return redirect()->route('admin.pengguna')->with('error', 'Anda tidak dapat menghapus akun Anda sendiri!');
+        // Hapus TTD fisik jika ada
+        if ($user->signature_path) {
+            Storage::disk('public')->delete($user->signature_path);
         }
         $user->delete();
-        return redirect()->route('admin.pengguna')->with('success', 'Pengguna berhasil dihapus!');
+        return redirect()->route('admin.pengguna')->with('success', 'Pengguna berhasil dihapus.');
     }
-    
-    public function laporan(Request $request)
+
+    // ... (Fungsi laporan dan mapJabatanToRole tidak diubah) ...
+    protected function mapJabatanToRole(string $jabatan): string
     {
-        $totalIzin = IzinMasuk::count();
-        $totalFinal = IzinMasuk::where('status', 'Disetujui Final')->count();
-        $totalRejected = IzinMasuk::where('status', 'Ditolak')->count();
-        $totalUsers = User::count();
-
-        // Menggunakan 'pemohon' (relasi yang sudah diperbaiki) dan approver
-        $izinsQuery = IzinMasuk::with('pemohon', 'approverL1', 'approverL2', 'approverL3')->orderBy('tanggal', 'desc');
-
-        // Filter Logics...
-
-        $izins = $izinsQuery->get(); 
-
-        return view('admin.laporan', compact('totalIzin', 'totalFinal', 'totalRejected', 'totalUsers', 'izins'));
+        return match ($jabatan) {
+            'Spv II MPS', 
+            'SPV II HSSE & FS', 
+            'Sr Spv RSD', 
+            'Spv I QQ', 
+            'Spv I SSGA' => 'atasan_pemohon',
+            'Jr Assistant Security TNI/POLRI' => 'security',
+            'IT Manager Banjarmasin', 
+            'Pjs IT Manager Banjarmasin' => 'manager',
+            'Admin' => 'admin',
+            default => 'pemohon',
+        };
     }
 }

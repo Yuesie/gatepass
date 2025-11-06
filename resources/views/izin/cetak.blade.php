@@ -177,40 +177,58 @@
     @php
         use Illuminate\Support\Str;
         
-        // FUNGSI HELPER UNTUK KONVERSI GAMBAR KE BASE64
+        // FUNGSI HELPER UNTUK KONVERSI GAMBAR KE BASE64 (FINAL VERSION)
         function getBase64Image($path) {
             if (empty($path)) return null;
 
             $finalPath = null;
             
-            // 1. Coba Path Pemohon (storage/app/public/ttd/...) -> diakses via public_path('storage/' . $path)
-            $fullPath1 = public_path('storage/' . $path);
+            // 1. Coba di lokasi STORAGE (path teraman untuk file yang diunggah)
+            $storagePath = storage_path('app/public/' . $path);
+            
+            // 2. Coba di lokasi PUBLIC/STORAGE (symlink)
+            $publicStoragePath = public_path('storage/' . $path);
 
-            // 2. Coba Path Approver (public/signatures/...) -> diakses via public_path($path)
-            $fullPath2 = public_path($path);
-
-            if (file_exists($fullPath1)) {
-                $finalPath = $fullPath1;
-            } elseif (file_exists($fullPath2)) {
-                $finalPath = $fullPath2;
+            if (file_exists($storagePath)) {
+                $finalPath = $storagePath;
+            } elseif (file_exists($publicStoragePath)) {
+                $finalPath = $publicStoragePath;
             }
             
-            if ($finalPath) {
-                $type = pathinfo($finalPath, PATHINFO_EXTENSION);
-                $data = file_get_contents($finalPath);
-                return 'data:image/' . $type . ';base64,' . base64_encode($data);
+            // 1. Pastikan file ditemukan.
+            // 2. Pastikan file dapat dibaca (is_readable).
+            if ($finalPath && is_readable($finalPath)) { 
+                try {
+                    $type = pathinfo($finalPath, PATHINFO_EXTENSION);
+                    $data = file_get_contents($finalPath);
+                    
+                    // Cek jika file_get_contents gagal (mengembalikan false)
+                    if ($data === false) { 
+                        return null; // Gagal baca, cegah error
+                    }
+
+                    return 'data:image/' . $type . ';base64,' . base64_encode($data);
+                } catch (\Exception $e) {
+                    // Tangkap sisa error jika ada, return null untuk keamanan
+                    return null;
+                }
             }
-            return null;
+            
+            // Gagal menemukan file atau tidak bisa dibaca
+            return null; 
         }
 
         // PANGGILAN FUNGSI TTD
-        $ttdPemohonSrc = getBase64Image($izin->ttd_pemohon_path); // TTD Pemohon
-        $ttdL1Src = getBase64Image($izin->ttd_approver_l1);
-        $ttdL2Src = getBase64Image($izin->ttd_approver_l2);
-        $ttdL3Src = getBase64Image($izin->ttd_approver_l3);
+        // Note: Asumsi kolom di tabel izin_masuk adalah ttd_pemohon_path, ttd_approver_l1, etc.
+        $ttdPemohonSrc = getBase64Image($izin->ttd_pemohon_path ?? $izin->pemohon->signature_path ?? null);
+        // KODE YANG DIKOREKSI (MEMPRIORITASKAN KOLOM DI TABEL IzinMasuk)
+        $ttdL1Src = getBase64Image($izin->ttd_approver_l1 ?? $izin->approverL1->signature_path ?? null);
+        $ttdL2Src = getBase64Image($izin->ttd_approver_l2 ?? $izin->approverL2->signature_path ?? null);
+        $ttdL3Src = getBase64Image($izin->ttd_approver_l3 ?? $izin->approverL3->signature_path ?? null);
 
         // Logo
         $logoFileName = 'logo.png'; 
+        // Menggunakan public_path untuk aset statis non-uploaded
         $logoPath = public_path('images/' . $logoFileName);
         $logoSrc = null;
 
