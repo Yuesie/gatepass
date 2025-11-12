@@ -11,21 +11,34 @@ class DetailBarang extends Model
 {
     use HasFactory;
 
-    
-    
-    
     // Nama tabel yang digunakan di database
     protected $table = 'detail_barang';
-    protected $guarded = [];
     
-    // Kolom yang diizinkan untuk diisi
+    // Matikan $guarded agar $fillable yang digunakan.
+    // protected $guarded = []; 
+    
+    // Kolom yang diizinkan untuk diisi (Mass Assignment)
     protected $fillable = [
-        'izin_id', 'nama_barang', 'volume', 'satuan', 'keterangan_item',
+        // ⚠️ Nama kolom yang digunakan di Controller Anda adalah 'izin_masuk_id'
+        'izin_masuk_id', 
+        
+        // ⚠️ Sesuaikan nama kolom agar konsisten dengan input form dan Controller (nama_item)
+        'nama_item', 
+        
+        // ⚠️ Sesuaikan nama kolom QTY/Volume agar konsisten
+        'qty', 
+        
+        'satuan', 
+        'keterangan_item',
+        
+        // ⭐ Kolom baru untuk menyimpan path foto
+        'foto_path',
     ];
 
     // Relasi Many-to-One: Item ini milik satu Izin Masuk
     public function izinMasuk()
     {
-        return $this->belongsTo(IzinMasuk::class, 'izin_id');
+        // ⚠️ Foreign key yang digunakan di Controller adalah 'izin_masuk_id'
+        return $this->belongsTo(IzinMasuk::class, 'izin_masuk_id');
     }
 }

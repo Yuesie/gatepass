@@ -7,18 +7,13 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            {{-- Pesan Sukses/Error (Opsional) --}}
-            @if (session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <span class="block sm:inline">{{ session('success') }}</span>
-                </div>
-            @endif
+            
             
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <h3 class="text-2xl font-bold mb-6 text-indigo-700">Ringkasan Statistik Sistem</h3>
                     
-                    {{-- Blok Kartu Statistik Ringkasan --}}
+                    {{-- Blok Kartu Statistik Ringkasan (Tidak diubah) --}}
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                         
                         {{-- Kartu 1: Total Gatepass --}}
@@ -48,10 +43,11 @@
                     
                     
                     {{-- ================================================= --}}
-                    {{-- BLOK FILTER LAPORAN --}}
+                    {{-- BLOK FILTER LAPORAN (Tidak diubah) --}}
                     {{-- ================================================= --}}
                     <h3 class="text-xl font-bold mt-10 mb-4 border-b pb-2">Filter Laporan Detail</h3>
                     
+                    {{-- Catatan: Asumsi route('admin.laporan') sudah benar --}}
                     <form method="GET" action="{{ route('admin.laporan') }}" class="p-4 bg-gray-50 rounded-lg border mb-8">
                         <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                             
@@ -109,9 +105,10 @@
                     {{-- ================================================= --}}
                     {{-- BLOK TABEL LAPORAN DETAIL --}}
                     {{-- ================================================= --}}
+                    {{-- Perbaikan: Gunakan null coalescing pada $izins untuk menghindari error jika belum diinisialisasi --}}
                     <h3 class="text-xl font-bold mt-8 mb-4">Data Gatepass Hasil Filter ({{ $izins->count() ?? 0 }} Data)</h3>
 
-                    @if($izins->isEmpty())
+                    @if(!isset($izins) || $izins->isEmpty())
                         <div class="p-6 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-lg">
                             Tidak ditemukan data Gatepass sesuai kriteria filter yang dipilih.
                         </div>
@@ -135,19 +132,37 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">{{ $izin->nomor_izin }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm">{{ ucfirst($izin->jenis_izin) }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ \Carbon\Carbon::parse($izin->tanggal)->isoFormat('D MMM Y') }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ optional($izin->pembuat)->name ?? 'N/A' }}</td>
+                                            
+                                            {{-- Kolom Pemohon (Nama Pembawa Barang) --}}
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ $izin->pembawa_barang ?? 'N/A' }}
+                                            </td>
+                                            
                                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                                     {{ $izin->status === 'Disetujui Final' ? 'bg-green-100 text-green-800' : 
                                                     ($izin->status === 'Ditolak' ? 'bg-red-100 text-red-800' : 
                                                     'bg-yellow-100 text-yellow-800') }}">
-                                                    {{ $izin->status }}
+                                                     {{ $izin->status }}
                                                 </span>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <a href="{{ route('izin.detail', $izin->id) }}" class="text-indigo-600 hover:text-indigo-900">
+                                            
+                                            {{-- KOLOM AKSI (LIHAT DETAIL + HAPUS) --}}
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center space-x-2">
+                                                <a href="{{ route('izin.detail', $izin->id) }}" class="text-indigo-600 hover:text-indigo-900 text-xs">
                                                     Lihat Detail
                                                 </a>
+
+                                                {{-- FORM HAPUS (Hanya untuk Admin) --}}
+                                                {{-- Catatan: Asumsi Anda memiliki route admin.laporan.delete --}}
+                                                <form action="{{ route('admin.laporan.delete', $izin->id) }}" method="POST" 
+                                                      onsubmit="return confirm('Anda yakin ingin menghapus Gatepass {{ $izin->nomor_izin }}? Aksi ini tidak dapat dibatalkan.');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-red-600 hover:text-red-900 text-xs border border-transparent hover:border-red-600 px-1 py-0.5 rounded transition">
+                                                        Hapus
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
                                     @endforeach

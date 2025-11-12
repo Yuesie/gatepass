@@ -11,23 +11,26 @@
     @endphp
 
     <div class="flex flex-col mb-8">
-        {{-- Header & Tombol Toggle --}}
-        <div class="flex items-center mb-6" :class="sidebarOpen ? 'justify-between' : 'justify-center'">
-            <a href="{{ route('dashboard') }}" class="flex items-center space-x-2" 
-                :class="{ 'opacity-100' : sidebarOpen, 'opacity-0 w-0 h-0 overflow-hidden' : !sidebarOpen }"
-            >
-                <span class="text-2xl text-indigo-400">🖧</span>
-                <span class="text-xl font-bold tracking-tight text-white transition-opacity duration-300">
-                    GERBANG DIGITAL
-                </span>
-            </a>
+    {{-- Header & Tombol Toggle --}}
+    <div class="flex items-center mb-6" :class="sidebarOpen ? 'justify-between' : 'justify-center'">
+        <a href="{{ route('dashboard') }}" class="flex items-center space-x-2" 
+            :class="{ 'opacity-100' : sidebarOpen, 'opacity-0 w-0 h-0 overflow-hidden' : !sidebarOpen }"
+        >
+            {{-- BLOK LOGO BARU --}}
             
-            <button @click="sidebarOpen = ! sidebarOpen" class="text-gray-400 focus:outline-none p-1 rounded-full hover:bg-gray-700 transition-colors"
-                :class="{ 'opacity-100' : sidebarOpen, 'opacity-0' : !sidebarOpen }"
-            >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
-            </button>
-        </div>
+                 
+            {{-- TEKS GERBANG DIGITAL --}}
+            <span class="text-xl font-bold tracking-tight text-white transition-opacity duration-300">
+                GERBANG DIGITAL
+            </span>
+        </a>
+        
+        <button @click="sidebarOpen = ! sidebarOpen" class="text-gray-400 focus:outline-none p-1 rounded-full hover:bg-gray-700 transition-colors"
+            :class="{ 'opacity-100' : sidebarOpen, 'opacity-0' : !sidebarOpen }"
+        >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+        </button>
+    </div>
 
         {{-- BLOK NAVIGASI UTAMA --}}
         <div class="flex flex-col space-y-2">

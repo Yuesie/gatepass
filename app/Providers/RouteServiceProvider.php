@@ -7,19 +7,24 @@ use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvi
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
-use App\Http\Middleware\RoleAccessCheck; // Wajib diimport
+use Illuminate\Support\Facades\URL; // <-- TAMBAHKAN INI
+use App\Http\Middleware\RoleAccessCheck; 
 
 class RouteServiceProvider extends ServiceProvider
 {
     /**
      * The path to your application's "home" route.
      */
-    public const HOME = '/dashboard'; // <--- Konstanta HOME harus ada DI SINI
+    public const HOME = '/dashboard'; 
 
     public function boot(): void
     {
+        // LOGIKA UNTUK MEMAKSA SEMUA URL DAN ASSET MENGGUNAKAN HTTPS
+        // Ini mengatasi error "Mixed Content" saat menggunakan HTTPS lokal (Laragon)
+        if ($this->app->environment('local') && env('APP_URL') !== 'http://localhost') {
+            URL::forceScheme('https');
+        }
         
-        // ... (sisanya adalah konfigurasi standar rute)
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });

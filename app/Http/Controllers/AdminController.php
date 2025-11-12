@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon; 
 use Illuminate\Support\Facades\Log; 
-use Illuminate\Support\Str; // Tambahkan ini
+use Illuminate\Support\Str; 
 
 class AdminController extends Controller
 {
@@ -20,13 +20,12 @@ class AdminController extends Controller
      */
     public function index()
     {
-        // Mengambil semua pengguna dengan pagination
         $users = User::paginate(10); 
         return view('admin.pengguna', compact('users'));
     }
 
     /**
-     * Menampilkan form tambah pengguna (untuk route admin.pengguna.buat)
+     * Menampilkan form tambah pengguna
      */
     public function create()
     {
@@ -34,7 +33,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Menyimpan pengguna baru ke database (untuk route admin.pengguna.store)
+     * Menyimpan pengguna baru ke database
      */
     public function store(Request $request)
     {
@@ -51,30 +50,23 @@ class AdminController extends Controller
 
         $signaturePath = null;
 
-        // Tentukan ROLE dan JABATAN sebelum menyimpan user (diperlukan untuk nama file TTD)
         $roleFinal = $this->mapJabatanToRole($validated['jabatan_terpilih']);
 
-        // 1. --- LOGIKA UPLOAD TANDA TANGAN ---
         if ($request->hasFile('signature_path')) {
             $file = $request->file('signature_path');
             
-            // Generate nama unik untuk sementara (sebelum User ID tersedia)
-            // Setelah user dibuat, kita akan update path-nya jika perlu,
-            // tapi untuk STORE, kita gunakan nama unik berdasarkan jabatan dan waktu
             $folder = 'ttd_approver';
             $fileName = time() . '_' . Str::slug($validated['jabatan_terpilih']) . '.' . $file->getClientOriginalExtension();
             
             try {
-                // 🛑 KOREKSI: Gunakan storeAs untuk memastikan path yang benar dan aman.
                 $path = $file->storeAs($folder, $fileName, 'public');
-                $signaturePath = $path; // Path relatif yang benar: ttd_approver/nama_file.png
+                $signaturePath = $path; 
             } catch (\Exception $e) {
                 Log::error("Gagal menyimpan file TTD: " . $e->getMessage());
                 return redirect()->back()->withInput()->with('error', 'Gagal menyimpan file TTD ke server.');
             }
         }
 
-        // 2. SIMPAN PENGGUNA
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -113,9 +105,7 @@ class AdminController extends Controller
 
         $signaturePath = $user->signature_path; 
 
-        // 1. --- LOGIKA UPDATE/GANTI TANDA TANGAN ---
         if ($request->hasFile('signature_path')) {
-            // Hapus file lama (jika ada)
             if ($user->signature_path) {
                 Storage::disk('public')->delete($user->signature_path);
             }
@@ -125,7 +115,6 @@ class AdminController extends Controller
             $fileName = time() . '_' . Str::slug($validated['jabatan_terpilih']) . '.' . $file->getClientOriginalExtension();
             
             try {
-                // 🛑 KOREKSI: Gunakan storeAs untuk memastikan path yang benar dan aman.
                 $path = $file->storeAs($folder, $fileName, 'public');
                 $signaturePath = $path;
             } catch (\Exception $e) {
@@ -134,7 +123,6 @@ class AdminController extends Controller
             }
         }
 
-        // 2. UPDATE DATA PENGGUNA
         $roleFinal = $this->mapJabatanToRole($validated['jabatan_terpilih']);
         
         $user->name = $validated['name'];
@@ -153,11 +141,10 @@ class AdminController extends Controller
     }
 
     /**
-     * Menghapus pengguna (Menggantikan delete() dengan destroy() standar Laravel)
+     * Menghapus pengguna
      */
-    public function destroy(User $user) // PERUBAHAN NAMA METHOD
+    public function destroy(User $user)
     {
-        // Hapus TTD fisik jika ada
         if ($user->signature_path) {
             Storage::disk('public')->delete($user->signature_path);
         }
@@ -165,7 +152,85 @@ class AdminController extends Controller
         return redirect()->route('admin.pengguna')->with('success', 'Pengguna berhasil dihapus.');
     }
 
-    // ... (Fungsi laporan dan mapJabatanToRole tidak diubah) ...
+    // =================================================================
+    // FUNGSI LAPORAN
+    // =================================================================
+
+    /**
+     * Menampilkan Halaman Laporan Global
+     */
+    public function laporan(Request $request)
+    {
+        // 1. Ambil Data Statistik Ringkasan
+        $totalIzin = IzinMasuk::count();
+        $totalFinal = IzinMasuk::where('status', 'Disetujui Final')->count();
+        $totalRejected = IzinMasuk::where('status', 'Ditolak')->count();
+        $totalUsers = User::count();
+
+        // 2. Query Data Izin berdasarkan Filter
+        $query = IzinMasuk::with('pemohon'); 
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('tanggal', '>=', $request->input('start_date'));
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('tanggal', '<=', $request->input('end_date'));
+        }
+        if ($request->filled('jenis_izin')) {
+            $query->where('jenis_izin', $request->input('jenis_izin'));
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        $izins = $query->orderBy('tanggal', 'desc')->get();
+
+        // 3. Kirim data ke View
+        return view('admin.laporan', compact(
+            'totalIzin', 
+            'totalFinal', 
+            'totalRejected', 
+            'totalUsers',
+            'izins'
+        ));
+    }
+    
+    /**
+     * Menghapus Gatepass dari Laporan Admin.
+     * INI ADALAH FUNGSI YANG HILANG DAN MENYEBABKAN ERROR ROUTE NOT DEFINED
+     */
+    public function deleteIzin(IzinMasuk $izin)
+    {
+        try {
+            // Hapus TTD Pemohon jika ada
+            if ($izin->ttd_pemohon_path) {
+                Storage::disk('public')->delete($izin->ttd_pemohon_path);
+            }
+
+            // Hapus foto-foto barang terkait
+            $izin->load('detailBarang');
+            if ($izin->detailBarang) {
+                foreach ($izin->detailBarang as $detail) {
+                    if ($detail->foto_path) {
+                        Storage::disk('public')->delete($detail->foto_path);
+                    }
+                }
+            }
+
+            $nomorIzin = $izin->nomor_izin;
+            
+            // Hapus Izin Masuk utama
+            $izin->delete(); 
+            
+            return redirect()->route('admin.laporan')->with('success', "Gatepass **#{$nomorIzin}** berhasil dihapus permanen.");
+            
+        } catch (\Exception $e) {
+            Log::error("Gagal menghapus Gatepass {$izin->id}: " . $e->getMessage());
+            
+            return redirect()->route('admin.laporan')->with('error', '❌ Gagal menghapus Gatepass. Terjadi kesalahan sistem.');
+        }
+    }
+
     protected function mapJabatanToRole(string $jabatan): string
     {
         return match ($jabatan) {
